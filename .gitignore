@@ -1,0 +1,23 @@
+node_modules
+.env
+
+# Environment variables
+
+.env.local
+.env.*.local
+
+# Secrets and keys
+/config/gcs-key.json
+*.pem
+*.key
+*.cert
+
+# Dependencies
+/node_modules
+
+# Build files
+/build
+/dist
+
+# Logs
+*.log

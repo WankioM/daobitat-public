@@ -1,0 +1,53 @@
+.coming-soon-container {
+    width: 100vw;
+  
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #242323;
+  }
+  
+  .canva-embed-wrapper {
+    position: relative;
+  }
+  
+  .early-access-button {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    padding: 10px 20px;
+    background-color: #242323;
+    color: white;
+    border: 2px solid white;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right:8vw;
+  }
+  
+  .early-access-button:hover {
+    background-color: #242323;
+    color: #f0f0f0;
+    border-color: #f0f0f0;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  
+  
+  .attribution {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  .attribution a {
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .attribution a:hover {
+    text-decoration: underline;
+  }
+
+  

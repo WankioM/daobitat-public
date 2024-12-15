@@ -1,0 +1,83 @@
+.web-header {
+    height: 92px;
+    position: relative;
+    width: 1440px;
+}
+
+.web-header .text-wrapper {
+    color: #ffffff;
+    font-family: "Helvetica-Regular", Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    left: 152px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 49px;
+    white-space: nowrap;
+}
+
+.web-header .div {
+    color: #ffffff;
+    font-family: "Helvetica-Regular", Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    left: 400px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 49px;
+    white-space: nowrap;
+}
+
+.web-header .text-wrapper-2 {
+    color: #ffffff;
+    font-family: "Helvetica-Regular", Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    left: 323px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 49px;
+    white-space: nowrap;
+}
+
+.web-header .text-wrapper-3 {
+    color: #ffffff;
+    font-family: "Helvetica-Regular", Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    left: 482px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 49px;
+    white-space: nowrap;
+}
+
+.web-header .text-wrapper-4 {
+    color: #ffffff;
+    font-family: "Helvetica-Regular", Helvetica;
+    font-size: 16px;
+    font-weight: 400;
+    left: 229px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 49px;
+    white-space: nowrap;
+}
+
+.web-header .text-wrapper-5 {
+    color: #ffffff;
+    font-family: "Brown Sugar-Regular", Helvetica;
+    font-size: 24px;
+    font-weight: 400;
+    left: 61px;
+    letter-spacing: 0;
+    line-height: normal;
+    position: absolute;
+    top: 46px;
+    white-space: nowrap;
+}

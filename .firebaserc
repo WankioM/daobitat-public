@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "zillow-b9e90",
+    "trib-60c0f": "trib-60c0f",
+    "zillow-b9e90": "zillow-b9e90"
+  },
+  "targets": {},
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}

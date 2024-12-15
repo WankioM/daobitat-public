@@ -1,0 +1,91 @@
+/* src/components/AccountInfo.css */
+
+.account-info {
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+  }
+  
+  .info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+  }
+  
+  .info-item strong {
+    flex-basis: 200px;
+    font-weight: bold;
+  }
+  
+  .info-item span,
+  .info-item input {
+    flex: 1;
+    margin-left: 10px;
+  }
+  
+  .info-item input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+  
+  .info-item .react-icons {
+    cursor: pointer;
+    color: #007bff;
+    margin-left: 10px;
+  }
+  
+  .info-item .react-icons:hover {
+    color: #0056b3;
+  }
+  
+  .save-button,
+  .delete-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    margin: 10px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .save-button:hover,
+  .delete-button:hover {
+    background-color: #0056b3;
+  }
+  
+  .delete-button {
+    background-color: #dc3545;
+  }
+  
+  .delete-button:hover {
+    background-color: #c82333;
+  }
+  
+  .save-button .react-icons,
+  .delete-button .react-icons {
+    margin-right: 5px;
+  }
+
+  .profile-pic {
+    width: 50px; /* Adjust the size to your preference */
+    height: 50px; /* Adjust the size to your preference */
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px; /* Space between image and text */
+  }
+  
+  .upload-section {
+    margin-left: 10px;
+  }
+  
+  
