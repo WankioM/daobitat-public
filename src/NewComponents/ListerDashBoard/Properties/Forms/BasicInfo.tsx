@@ -12,41 +12,42 @@ interface CustomSuggestion extends Suggestion {
 export const BasicInfo: React.FC<StepProps> = ({ formData, setFormData }) => {
   const handleLocationSelect = async (address: string) => {
     try {
-      // Create a new geocoder instance
+      // Update location immediately for UI
+      setFormData(prev => ({
+        ...prev,
+        location: address
+      }));
+   
       const geocoder = new window.google.maps.Geocoder();
-      
-      // Perform geocoding
       const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
         geocoder.geocode({ address }, (results, status) => {
-          if (status === 'OK' && results && results.length > 0) {
+          if (status === 'OK' && results?.[0]) {
             resolve(results);
           } else {
-            reject(new Error(`Geocoding failed with status: ${status}`));
+            reject(new Error(`Geocoding failed: ${status}`));
           }
         });
       });
-
+   
       const location = results[0].geometry.location;
-      const lat = location.lat();
-      const lng = location.lng();
-
-      console.log('Geocoded coordinates:', { lat, lng });
-
+      
       setFormData(prev => ({
         ...prev,
         location: address,
         streetAddress: results[0].formatted_address,
-        googleMapsURL: `https://www.google.com/maps?q=${lat},${lng}`,
+        googleMapsURL: `https://www.google.com/maps?q=${location.lat()},${location.lng()}`,
         coordinates: {
-          lat,
-          lng
+          lat: location.lat(),
+          lng: location.lng()
         }
       }));
+   
     } catch (error) {
       console.error('Geocoding error:', error);
+      // Location already set even if geocoding fails
     }
-  };
-
+   };
+   
   const handleLocationChange = (value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -137,33 +138,33 @@ export const BasicInfo: React.FC<StepProps> = ({ formData, setFormData }) => {
           onSelect={handleLocationSelect}
         >
           {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-            <div>
-              <input
-                {...getInputProps({
-                  placeholder: 'Enter location',
-                  className: 'w-full p-2 border border-gray-200 rounded-lg focus:border-celadon outline-none'
-                })}
-              />
-              <div className="absolute z-10 w-full bg-white shadow-lg max-h-60 overflow-auto">
-                {loading && <div className="p-2">Loading...</div>}
-                {suggestions.map((suggestion) => {
-                  const customSuggestion = suggestion as CustomSuggestion;
-                  const className = customSuggestion.active
-                    ? 'p-2 hover:bg-gray-100 cursor-pointer bg-gray-100'
-                    : 'p-2 hover:bg-gray-100 cursor-pointer';
-                  return (
-                    <div
-                      key={customSuggestion.placeId}
-                      {...getSuggestionItemProps(customSuggestion, {
-                        className,
-                      })}
-                    >
-                      <span>{customSuggestion.description}</span>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="relative w-full">
+            <input
+              {...getInputProps({
+                placeholder: 'Enter location',
+                className: 'w-full p-2 border border-gray-200 rounded-lg focus:border-celadon outline-none'
+              })}
+            />
+            <div className="absolute z-10 w-full bg-white shadow-lg max-h-60 overflow-auto break-words">
+              {loading && <div className="p-2">Loading...</div>}
+              {suggestions.map((suggestion) => {
+                const customSuggestion = suggestion as CustomSuggestion;
+                const className = customSuggestion.active
+                  ? 'p-2 hover:bg-gray-100 cursor-pointer bg-gray-100'
+                  : 'p-2 hover:bg-gray-100 cursor-pointer';
+                return (
+                  <div
+                    key={customSuggestion.placeId}
+                    {...getSuggestionItemProps(customSuggestion, {
+                      className,
+                    })}
+                  >
+                    <span>{customSuggestion.description}</span>
+                  </div>
+                );
+              })}
             </div>
+           </div>
           )}
         </PlacesAutocomplete>
       </div>

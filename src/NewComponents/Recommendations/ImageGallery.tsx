@@ -1,13 +1,21 @@
 import React from 'react';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight, FaTimes, FaExternalLinkAlt } from 'react-icons/fa';
 
 interface ImageGalleryProps {
   images: string[];
   selectedIndex: number;
   onSelect: (index: number) => void;
+  onClose?: () => void;
+  onOpenInTab?: () => void;
 }
 
-const ImageGallery: React.FC<ImageGalleryProps> = ({ images, selectedIndex, onSelect }) => {
+const ImageGallery: React.FC<ImageGalleryProps> = ({ 
+  images, 
+  selectedIndex, 
+  onSelect,
+  onClose,
+  onOpenInTab
+}) => {
   const nextImage = () => {
     onSelect((selectedIndex + 1) % images.length);
   };
@@ -18,6 +26,28 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, selectedIndex, onSe
 
   return (
     <div className="relative w-full h-full">
+      {/* Control buttons */}
+      <div className="absolute top-4 right-4 z-20 flex gap-2">
+        {onOpenInTab && (
+          <button
+            onClick={onOpenInTab}
+            className="p-2 rounded-full bg-white bg-opacity-75 hover:bg-opacity-100 transition-all shadow-lg"
+            aria-label="Open in new tab"
+          >
+            <FaExternalLinkAlt className="text-gray-800" size={16} />
+          </button>
+        )}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full bg-white bg-opacity-75 hover:bg-opacity-100 transition-all shadow-lg"
+            aria-label="Close"
+          >
+            <FaTimes className="text-gray-800" size={16} />
+          </button>
+        )}
+      </div>
+
       {/* Main Image */}
       <img
         src={images[selectedIndex]}

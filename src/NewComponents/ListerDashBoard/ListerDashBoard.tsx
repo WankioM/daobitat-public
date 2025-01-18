@@ -25,9 +25,10 @@ const ListerDashboard: React.FC = () => {
     }
   }, [location]);
 
+  // Only check if user is logged in, not their role
   useEffect(() => {
-    if (user?.role !== 'lister') {
-      navigate('/');
+    if (!user) {
+      navigate('/login');
     }
   }, [user, navigate]);
 

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { FaMapMarkerAlt, FaBed, FaParking, FaTree } from 'react-icons/fa';
+import { FaMapMarkerAlt, FaBed, FaParking, FaTree, FaMoneyBillWave } from 'react-icons/fa';
 import ImageGallery from './ImageGallery';
 import MessageOwner from './MessageOwner';
+import MakeOfferModal from '../PaymentFlow/Offer/MakeOfferModal';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../ListerDashBoard/Properties/propertyTypes';
 
@@ -13,31 +14,28 @@ interface HeroPropertyFocusProps {
 const HeroPropertyFocus: React.FC<HeroPropertyFocusProps> = ({ property, onClose }) => {
   const navigate = useNavigate();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showOfferModal, setShowOfferModal] = useState(false);
 
   const handleSendMessage = () => {
     navigate('/listerdashboard', { state: { activeTab: 'Messages' } });
   };
 
+  const handleOpenInTab = () => {
+    const newWindow = window.open(`/property/${property._id}`, '_blank');
+    if (newWindow) newWindow.focus();
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-        {/* Close Button */}
-        <div className="flex justify-end p-4">
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-
         {/* Image Gallery */}
         <div className="relative h-[500px]">
           <ImageGallery
             images={property.images || []}
             selectedIndex={selectedImageIndex}
             onSelect={setSelectedImageIndex}
+            onClose={onClose}
+            onOpenInTab={handleOpenInTab}
           />
         </div>
 
@@ -107,19 +105,39 @@ const HeroPropertyFocus: React.FC<HeroPropertyFocusProps> = ({ property, onClose
             )}
           </div>
 
-          {/* Message Owner - Right Column */}
+          {/* Message Owner & Make Offer - Right Column */}
           <div className="md:col-span-1">
-            <div className="sticky top-6">
+            <div className="sticky top-6 space-y-4">
               <MessageOwner
                 propertyId={property._id}
                 propertyName={property.propertyName}
                 ownerId={property.owner._id}
                 ownerName={property.owner.name}
               />
+              
+              {/* Make Offer Button */}
+              <button
+                onClick={() => setShowOfferModal(true)}
+                className="w-full flex items-center justify-center space-x-2 bg-white border-2 border-celadon text-celadon py-3 px-4 rounded-lg hover:bg-celadon hover:text-white transition-all duration-300 font-medium"
+              >
+                <FaMoneyBillWave className="text-lg" />
+                <span>Make an Offer</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Make Offer Modal */}
+      <MakeOfferModal
+        isOpen={showOfferModal}
+        onClose={() => setShowOfferModal(false)}
+        propertyName={property.propertyName}
+        propertyId={property._id}
+        ownerId={property.owner._id}
+        listingPrice={property.price}
+        currency={property.currency || 'KES'}
+      />
     </div>
   );
 };

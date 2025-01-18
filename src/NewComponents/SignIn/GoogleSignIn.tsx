@@ -3,7 +3,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import AuthService from '../../services/authService';
+import {AuthService} from '../../services/authService';
 import api from '../../services/api';
 import { useUser } from '../../NewContexts/UserContext';
 

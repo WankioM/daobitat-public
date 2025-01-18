@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaChevronLeft, FaChevronRight, FaExpand, FaCompress } from 'react-icons/fa';
 import HeroPropertyCard from './HeroPropertyCard';
+import HeroPropertyFocus from './HeroPropertyFocus';
 import { Property } from '../ListerDashBoard/Properties/propertyTypes';
 import { propertyService } from '../../services/propertyService';
 
@@ -12,6 +13,7 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [newProperties, setNewProperties] = useState<Property[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const itemsPerPage = isExpanded ? 6 : 3;
 
   useEffect(() => {
@@ -97,6 +99,7 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
                 onClick={async (propertyId: string) => {
                   try {
                     await propertyService.incrementPropertyClicks(propertyId);
+                    setSelectedProperty(property);
                   } catch (error) {
                     console.error('Error incrementing clicks:', error);
                   }
@@ -132,6 +135,14 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
           />
         ))}
       </div>
+
+      {/* Property Focus Modal */}
+      {selectedProperty && (
+        <HeroPropertyFocus
+          property={selectedProperty}
+          onClose={() => setSelectedProperty(null)}
+        />
+      )}
     </div>
   );
 };

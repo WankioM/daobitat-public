@@ -17,7 +17,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   setEditedProperty,
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 bg-red">
       <div>
         <label className="font-semibold text-gray-700 block mb-1">Location</label>
         {isEditing ? (
@@ -33,7 +33,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
       </div>
 
       <div>
-        <label className="font-semibold text-gray-700 block mb-1">Price</label>
+        <label className="font-semibold bg-red text-gray-700 block mb-1">Price</label>
         {isEditing ? (
           <input
             type="number"
@@ -46,7 +46,7 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 bg-red">
         <div>
           <label className="font-semibold text-gray-700 block mb-1">Bedrooms</label>
           {isEditing ? (

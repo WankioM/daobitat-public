@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { FaGoogle } from 'react-icons/fa';
-import AuthService from '../../services/authService';
+import {AuthService} from '../../services/authService';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';

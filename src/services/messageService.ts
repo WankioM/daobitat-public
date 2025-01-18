@@ -29,12 +29,24 @@ export const messageService = {
   },
 
   sendMessage: async (receiverId: string, propertyId: string, content: string): Promise<Message> => {
+    let messageData;
+    try {
+      // Check if content is a JSON string containing offer details
+      messageData = JSON.parse(content);
+    } catch (e) {
+      // If not JSON, it's a regular text message
+      messageData = {
+        type: 'text',
+        content: content
+      };
+    }
+  
     const response = await axios.post(
       `${API_URL}/api/messages/send`,
       {
         receiverId,
         propertyId,
-        content
+        ...messageData
       },
       getAuthHeader()
     );

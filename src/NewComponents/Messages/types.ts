@@ -1,3 +1,13 @@
+export interface OfferDetails {
+  amount: number;
+  currency: string;
+  currencySymbol: string;
+  duration: number;
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'withdrawn' | 'completed';
+  securityDeposit: number;
+  moveInDate: string;
+  propertyImage?: string;
+}
 export interface User {
   _id: string;
   name: string;
@@ -18,6 +28,8 @@ export interface Message {
   property: Property;
   createdAt: string;
   read: boolean;
+  type?: 'text' | 'offer';  // Add message type
+  offerDetails?: OfferDetails;  // Add offer details
 }
 
 export interface ChatContact {
@@ -45,3 +57,4 @@ export interface ChatWindowProps {
   onSendMessage: (content: string) => void;
   isLoading: boolean;
 }
+

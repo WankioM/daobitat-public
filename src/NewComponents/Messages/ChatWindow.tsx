@@ -3,8 +3,14 @@ import { ChatWindowProps } from './types';
 import { FaUser, FaPaperPlane } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '../../NewContexts/UserContext';
+import OfferMessage from './OfferMessage';
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ contact, messages, onSendMessage, isLoading }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ 
+  contact, 
+  messages, 
+  onSendMessage, 
+  isLoading 
+}) => {
   const { user } = useUser();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -60,6 +66,19 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, messages, onSendMessag
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message) => {
           const isOwn = message.sender._id === user?._id;
+
+          // Handle offer messages
+          if (message.type === 'offer' && message.offerDetails) {
+            return (
+              <OfferMessage
+                key={message._id}
+                message={message}
+                isOwn={isOwn}
+              />
+            );
+          }
+
+          // Handle regular text messages
           return (
             <div
               key={message._id}
@@ -97,7 +116,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ contact, messages, onSendMessag
           <button
             type="submit"
             disabled={!newMessage.trim() || isLoading}
-            className="px-4 py-2 bg-celadon text-blackrounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-celadon text-black rounded-lg hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FaPaperPlane />
           </button>

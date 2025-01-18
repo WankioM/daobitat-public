@@ -4,11 +4,75 @@ import { motion } from 'framer-motion';
 import { FaWallet, FaLongArrowAltRight } from 'react-icons/fa';
 import GoogleSignIn from './GoogleSignIn';
 import WalletSignIn from './WalletSignIn';
+import {AuthService} from '../../services/authService';
+import { useUser } from '../../NewContexts/UserContext';
 
 const SignIn = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const { setUser } = useUser();
+
+  const handleSignIn = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
+    
+    try {
+      if (!email || !password) {
+        setError('Please enter both email and password');
+        return;
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      console.log('Attempting to sign in with:', { email }); // Log signin attempt
+      
+      const response = await AuthService.emailSignIn({ email, password });
+      console.log('Sign in response:', response); // Log the response
+      
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+
+      const { token, user } = response.data;
+      
+      if (!token || !user) {
+        throw new Error('Invalid response format - missing token or user data');
+      }
+
+      // Store token and user data
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Update user context
+      setUser(user);
+      
+      // Navigate only after everything is set
+      navigate('/');
+      
+    } catch (error: any) {
+      console.error('Detailed sign in error:', error);
+      console.error('Error response:', error.response); // Log the full error response
+      
+      // More specific error messages
+      if (error.response?.status === 401) {
+        setError('Invalid email or password');
+      } else if (error.response?.status === 404) {
+        setError('User not found. Please check your email or sign up');
+      } else {
+        setError(
+          error.response?.data?.message || 
+          error.message || 
+          'Failed to sign in. Please try again'
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="h-screen flex overflow-hidden">
@@ -66,20 +130,24 @@ const SignIn = () => {
               </div>
 
               <div className="space-y-6">
-                <input
+                  <input
                   type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   placeholder="Email address"
                   className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] placeholder-gray-400 font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
+                          text-[#24191E] placeholder-gray-400 font-helvetica-light
+                          focus:outline-none focus:border-[#24191E] transition-colors"
                 />
                 <input
-                  type="password"
-                  placeholder="Password"
-                  className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] placeholder-gray-400 font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
-                />
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="w-full bg-white border border-gray-200 rounded-xl p-4 
+                            text-[#24191E] placeholder-gray-400 font-helvetica-light
+                            focus:outline-none focus:border-[#24191E] transition-colors"
+                  />
 
                 <div className="flex items-center justify-between">
                   <label className="flex items-center space-x-2 text-gray-600 font-helvetica-light">
@@ -92,6 +160,7 @@ const SignIn = () => {
                 </div>
 
                 <motion.button
+                 onClick={handleSignIn}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   className="w-full bg-[#24191E] text-white rounded-xl 
@@ -123,7 +192,7 @@ const SignIn = () => {
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://storage.googleapis.com/web-vids/roadcover.png)'
+            backgroundImage: 'url(https://i.pinimg.com/736x/af/04/db/af04db986bd49578b34959da802e79a3.jpg)'
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#24191E] via-[#24191E]/60 to-[#24191E]/40" />
@@ -135,7 +204,7 @@ const SignIn = () => {
               transition={{ delay: 0.2 }}
               className="space-y-6"
             >
-              <h1 className="text-white font-helvetica-light text-3xl leading-tight">
+              <h1 className="text-white font-helvetica-light text-5xl leading-tight">
                 Find Your Perfect Home With DAO-Bitat
               </h1>
               <p className="text-white/80 font-helvetica-light text-l">

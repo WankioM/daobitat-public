@@ -111,9 +111,18 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                 )}
               </div>
               <button
-                onClick={step === 4 ? handleSubmit : () => setStep(s => s + 1)}
+                onClick={step === 4 ? handleSubmit : () => {
+                  // Validation for step 1
+                  if (step === 1) {
+                    if (!formData.propertyName || !formData.propertyType || !formData.specificType) {
+                      alert('Please fill in all required fields marked with *');
+                      return;
+                    }
+                  }
+                  setStep(s => s + 1);
+                }}
                 className={`px-4 py-2 text-white rounded-lg font-helvetica-regular ${
-                  step === 4 ? 'bg-celadon hover:bg-celadon-dark' : 'bg-celadon hover:bg-celadon-dark'
+                  step === 4 ? 'bg-celadon hover:bg-slategray' : 'bg-celadon hover:bg-slategray'
                 }`}
               >
                 {step === 4 ? 'Submit' : 'Next'}

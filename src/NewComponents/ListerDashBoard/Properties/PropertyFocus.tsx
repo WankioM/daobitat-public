@@ -96,7 +96,7 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
 
   return (
     <motion.div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
+      className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -109,7 +109,7 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
       >
         <div className="sticky top-0 bg-white z-10 p-4 border-b flex justify-between items-center">
           <h2 className="text-2xl font-bold text-slategray">Property Details</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 ">
             {!isEditing && (
               <button
                 onClick={() => setIsEditing(true)}
@@ -138,17 +138,23 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
-              <div className="relative h-64 rounded-lg overflow-hidden">
-                <ImageCarousel 
-                  images={property.images} 
-                  className="w-full h-full"
-                />
-                <div className="absolute top-2 right-2 bg-celadon text-slategray px-3 py-1 rounded-full">
-                  {property.status.listingState}
+              <div className="bg-white rounded-lg max-w-4xl w-full overflow-hidden">
+                <div className="relative h-96">
+                  <ImageCarousel 
+                    images={editedProperty.images} 
+                    className="h-full"
+                    editable={isEditing}
+                    onImagesChange={(newImages) => {
+                      setEditedProperty(prev => ({
+                        ...prev,
+                        images: newImages
+                      }));
+                    }}
+                  />
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 ">
                 <div>
                   <label className="font-semibold text-gray-700 block mb-1">Property Name</label>
                   {isEditing ? (
@@ -197,10 +203,43 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
                     <p className="text-gray-800">{property.propertyType} - {property.specificType}</p>
                   )}
                 </div>
+
+
+                <div>
+                <label className="font-semibold text-gray-700 block mb-1">Amenities</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(property.amenities).map(([key, value]) => (
+                    <div key={key} className="flex items-center gap-2">
+                      {isEditing ? (
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={editedProperty.amenities[key as keyof typeof property.amenities]}
+                            onChange={(e) => setEditedProperty((prev: Property) => ({
+                              ...prev,
+                              amenities: {
+                                ...prev.amenities,
+                                [key]: e.target.checked
+                              }
+                            }))}
+                            className="form-checkbox text-celadon"
+                          />
+                          <span className="capitalize">{key}</span>
+                        </label>
+                      ) : (
+                        <>
+                          <span className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
+                          <span className="capitalize">{key}</span>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
               </div>
             </div>
 
-            <div>
+            <div >
               <label className="font-semibold text-gray-700 block mb-1">Additional Comments</label>
               {isEditing ? (
                 <textarea
@@ -209,7 +248,7 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
                     ...prev, 
                     additionalComments: e.target.value
                   }))}
-                  className="w-full p-2 border rounded focus:border-celadon outline-none min-h-[100px] resize-y"
+                  className="w-full p-2 border rounded focus:border-celadon outline-none min-h-[150px] resize-y"
                   placeholder="Add any additional details about your property..."
                 />
               ) : (
@@ -217,9 +256,9 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
                   {property.additionalComments || 'No additional comments'}
                 </p>
               )}
-            </div>
-
-            <div className="space-y-6">
+            
+            
+            <div className="space-y-6 ">
               <div>
               <div className="relative"> {/* First relative wrapper */}
                 <label className="font-semibold text-gray-700 block mb-1">Location</label>
@@ -342,37 +381,7 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
                 )}
               </div>
 
-              <div>
-                <label className="font-semibold text-gray-700 block mb-1">Amenities</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(property.amenities).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-2">
-                      {isEditing ? (
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={editedProperty.amenities[key as keyof typeof property.amenities]}
-                            onChange={(e) => setEditedProperty((prev: Property) => ({
-                              ...prev,
-                              amenities: {
-                                ...prev.amenities,
-                                [key]: e.target.checked
-                              }
-                            }))}
-                            className="form-checkbox text-celadon"
-                          />
-                          <span className="capitalize">{key}</span>
-                        </label>
-                      ) : (
-                        <>
-                          <span className={`w-2 h-2 rounded-full ${value ? 'bg-green-500' : 'bg-gray-300'}`} />
-                          <span className="capitalize">{key}</span>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+             
 
               {property.googleMapsURL && (
                 <div>
@@ -388,6 +397,10 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
                 </div>
               )}
             </div>
+            
+            </div>
+
+            
           </div>
 
           {isEditing && (

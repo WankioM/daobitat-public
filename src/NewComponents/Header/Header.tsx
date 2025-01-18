@@ -6,7 +6,6 @@ const navItems = ['Buy', 'Rent', 'Sell', 'Advertise', 'Financing', 'About'];
 
 interface User {
   name: string;
-  role: string;
   // add other user properties as needed
 }
 
@@ -16,13 +15,7 @@ export const Header = () => {
 
   const handleUsernameClick = () => {
     if (user) {
-      const routes = {
-        lister: '/listerdashboard',
-        agent: '/agentdashboard',
-        buyer: '/buyrentdashboard',
-        renter: '/buyrentdashboard'
-      };
-      navigate(routes[user.role as keyof typeof routes] || '/');
+      navigate('/listerdashboard');
     }
   };
 
