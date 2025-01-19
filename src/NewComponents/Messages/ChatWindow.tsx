@@ -4,6 +4,7 @@ import { FaUser, FaPaperPlane } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '../../NewContexts/UserContext';
 import OfferMessage from './OfferMessage';
+import { getMongoId } from '../../utils/mongoUtils';
 
 const ChatWindow: React.FC<ChatWindowProps> = ({ 
   contact, 
@@ -65,13 +66,14 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((message) => {
-          const isOwn = message.sender._id === user?._id;
+          const isOwn = getMongoId(message.sender._id) === getMongoId(user?._id);
+          const messageKey = getMongoId(message._id) || 'fallback-key';
 
           // Handle offer messages
           if (message.type === 'offer' && message.offerDetails) {
             return (
               <OfferMessage
-                key={message._id}
+                key={messageKey}
                 message={message}
                 isOwn={isOwn}
               />
@@ -81,7 +83,7 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
           // Handle regular text messages
           return (
             <div
-              key={message._id}
+              key={messageKey}
               className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
             >
               <div

@@ -1,8 +1,13 @@
 // src/types/messages.ts
 import { User } from '../services/offerService';
 
+// MongoDB ObjectId type
+export interface MongoDBId {
+  $oid: string;
+}
+
 export interface Property {
-  _id: string;
+  _id: string | MongoDBId;
   propertyName: string;
   propertyType?: string;
   images?: string[];
@@ -10,7 +15,7 @@ export interface Property {
 }
 
 export interface OfferDetails {
-  _id: string;  // Using _id consistently
+  _id: string | MongoDBId;  // Support both string and MongoDB ObjectId format
   amount: number;
   currency: string;
   currencySymbol: string;
@@ -23,7 +28,7 @@ export interface OfferDetails {
 }
 
 export interface Message {
-  _id: string;
+  _id: string | MongoDBId;
   sender: User;
   receiver: User;
   property: Property;
@@ -70,7 +75,7 @@ export interface MessageContent {
 
 // Offer-related types
 export interface CreateOfferDTO {
-  propertyId: string;
+  propertyId: string | MongoDBId;
   amount: number;
   securityDeposit: number;
   currency: string;

@@ -6,6 +6,7 @@ import ChatWindow from './ChatWindow';
 import { ChatContact, Message } from '../../types/messages';
 import { messageService } from '../../services/messageService';
 import { User } from '../../services/offerService';
+import { getMongoId } from '../../utils/mongoUtils';
 
 const Messages: React.FC = () => {
   const { user } = useUser();
@@ -124,11 +125,19 @@ const Messages: React.FC = () => {
     const fetchConversation = async () => {
       if (!selectedContact || !user?._id) return;
 
+      const userId = getMongoId(selectedContact.user._id);
+      const propertyId = getMongoId(selectedContact.property._id);
+
+      if (!userId || !propertyId) {
+        console.error('Invalid user or property ID');
+        return;
+      }
+
       setIsLoading(true);
       try {
         const conversationMessages = await messageService.getConversation(
-          selectedContact.user._id,
-          selectedContact.property._id
+          userId,
+          propertyId
         );
         setMessages(conversationMessages as Message[]);
       } catch (error) {
@@ -144,10 +153,18 @@ const Messages: React.FC = () => {
   const handleSendMessage = async (content: string) => {
     if (!selectedContact || !user?._id) return;
 
+    const userId = getMongoId(selectedContact.user._id);
+    const propertyId = getMongoId(selectedContact.property._id);
+
+    if (!userId || !propertyId) {
+      console.error('Invalid user or property ID');
+      return;
+    }
+
     try {
       const newMessage = await messageService.sendMessage(
-        selectedContact.user._id,
-        selectedContact.property._id,
+        userId,
+        propertyId,
         content
       );
       
@@ -158,8 +175,8 @@ const Messages: React.FC = () => {
         const updated = [...prev];
         const contactIndex = updated.findIndex(
           c => 
-            c.user._id === selectedContact.user._id && 
-            c.property._id === selectedContact.property._id
+            getMongoId(c.user._id) === userId && 
+            getMongoId(c.property._id) === propertyId
         );
         if (contactIndex !== -1) {
           updated[contactIndex] = {

@@ -30,18 +30,23 @@ const determineUserRole = (user: Partial<User>): User['role'] => {
 const ensureCompleteOfferDetails = (offerDetails?: Partial<OfferDetails>): OfferDetails | undefined => {
   if (!offerDetails) return undefined;
 
+  // Handle MongoDB ObjectId format
+  const offerId = typeof offerDetails._id === 'object' && offerDetails._id?.$oid
+    ? { $oid: offerDetails._id.$oid }
+    : offerDetails._id;
+
   // Ensure all required fields are present and properly typed
   return {
-    _id: offerDetails._id,
-    amount: offerDetails.amount,
+    _id: offerId,
+    amount: offerDetails.amount || 0,
     currency: offerDetails.currency || 'KES',
     currencySymbol: offerDetails.currencySymbol || 'KSh',
-    duration: offerDetails.duration,
+    duration: offerDetails.duration || 0,
     status: offerDetails.status || 'pending',
-    securityDeposit: offerDetails.securityDeposit,
-    moveInDate: offerDetails.moveInDate,
+    securityDeposit: offerDetails.securityDeposit || 0,
+    moveInDate: offerDetails.moveInDate || new Date(),
     propertyImage: offerDetails.propertyImage,
-    totalAmount: offerDetails.totalAmount
+    totalAmount: offerDetails.totalAmount || 0
   } as OfferDetails;
 };
 

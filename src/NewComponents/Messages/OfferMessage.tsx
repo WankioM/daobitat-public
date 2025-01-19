@@ -4,6 +4,7 @@ import { offerService } from '../../services/offerService';
 import { messageService } from '../../services/messageService';
 import { useUser } from '../../NewContexts/UserContext';
 import { useNavigate } from 'react-router-dom';
+import { getMongoId } from '../../utils/mongoUtils';
 
 interface OfferMessageProps {
   message: Message;
@@ -18,23 +19,29 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
   if (!offerDetails) return null;
 
   const handleAction = async (action: 'accept' | 'reject') => {
-    if (!offerDetails?._id) {
-      console.error('No offer ID found:', offerDetails);
+    if (!offerDetails) {
+      console.error('No offer details found');
+      return;
+    }
+
+    const offerId = getMongoId(offerDetails._id);
+    if (!offerId) {
+      console.error('No valid offer ID found in offer details:', offerDetails);
       return;
     }
   
     try {
-      // Update offer status using MongoDB's _id
+      // Update offer status using the extracted offerId
       const updatedOffer = action === 'accept' 
-        ? await offerService.acceptOffer(offerDetails._id)
-        : await offerService.rejectOffer(offerDetails._id);
+        ? await offerService.acceptOffer(offerId)
+        : await offerService.rejectOffer(offerId);
   
       // Ensure we preserve all offer details including _id when creating notification
       const notificationContent = {
         type: 'offer' as const,
         content: `Offer ${action}ed for ${message.property.propertyName}`,
         offerDetails: {
-          _id: offerDetails._id, // Explicitly preserve the _id
+          _id: updatedOffer._id,
           amount: updatedOffer.amount,
           currency: updatedOffer.currency,
           currencySymbol: updatedOffer.currencySymbol,
@@ -44,12 +51,19 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
           status: updatedOffer.status,
           totalAmount: updatedOffer.totalAmount,
           propertyImage: message.property.images?.[0]
-        } as OfferDetails
+        }
       };
-  
+
+      const senderId = getMongoId(message.sender._id);
+      const propertyId = getMongoId(message.property._id);
+
+      if (!senderId || !propertyId) {
+        throw new Error('Invalid sender or property ID');
+      }
+
       await messageService.sendMessage(
-        message.sender._id,
-        message.property._id,
+        senderId,
+        propertyId,
         JSON.stringify(notificationContent)
       );
   
@@ -59,20 +73,20 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
     }
   };
 
-
   const handleInitiatePayment = () => {
-    // Implement payment flow here
-    console.log('Initiating payment for offer:', offerDetails._id);
+    const offerId = getMongoId(offerDetails._id);
+    console.log('Initiating payment for offer:', offerId);
   };
 
   const handlePropertyClick = () => {
-    if (message.property._id) {
-      navigate(`/property/${message.property._id}`);
+    const propertyId = getMongoId(message.property._id);
+    if (propertyId) {
+      navigate(`/property/${propertyId}`);
     }
   };
 
-  const isLister = user?._id === message.receiver._id;
-  const isRenter = user?._id === message.sender._id;
+  const isLister = getMongoId(user?._id) === getMongoId(message.receiver._id);
+  const isRenter = getMongoId(user?._id) === getMongoId(message.sender._id);
   const showPaymentButton = isRenter && offerDetails.status === 'accepted';
   const showActionButtons = isLister && offerDetails.status === 'pending';
 
