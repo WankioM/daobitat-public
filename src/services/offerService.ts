@@ -154,6 +154,23 @@ class OfferService {
     }
   }
 
+  async getOfferById(offerId: string): Promise<Offer> {
+    try {
+      const response = await api.get<APIResponse<Offer>>(
+        `${this.baseUrl}/${offerId}`
+      );
+  
+      if (response.data.status === 'error' || !response.data.data) {
+        throw new Error(response.data.message || 'Failed to fetch offer');
+      }
+  
+      return response.data.data;
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
   /**
    * Reject an offer (property owner only)
    */

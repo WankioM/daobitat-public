@@ -1,10 +1,13 @@
-import React from 'react';
-import { Message, OfferDetails } from '../../types/messages';
+// src/NewComponents/Messages/OfferMessage.tsx
+import React , { useState } from 'react';
+import { Message } from '../../types/messages';
 import { offerService } from '../../services/offerService';
 import { messageService } from '../../services/messageService';
 import { useUser } from '../../NewContexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { getMongoId } from '../../utils/mongoUtils';
+import OfferActions from './OfferActions';
+import PaymentFlow from '../PaymentFlow/PaymentFlow';
 
 interface OfferMessageProps {
   message: Message;
@@ -15,6 +18,7 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
   const { user } = useUser();
   const navigate = useNavigate();
   const { offerDetails } = message;
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   if (!offerDetails) return null;
 
@@ -31,12 +35,10 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
     }
   
     try {
-      // Update offer status using the extracted offerId
       const updatedOffer = action === 'accept' 
         ? await offerService.acceptOffer(offerId)
         : await offerService.rejectOffer(offerId);
   
-      // Ensure we preserve all offer details including _id when creating notification
       const notificationContent = {
         type: 'offer' as const,
         content: `Offer ${action}ed for ${message.property.propertyName}`,
@@ -75,7 +77,63 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
 
   const handleInitiatePayment = () => {
     const offerId = getMongoId(offerDetails._id);
+    setShowPaymentModal(true);
     console.log('Initiating payment for offer:', offerId);
+  };
+
+  const handlePaymentComplete = async () => {
+    try {
+      const offerId = getMongoId(offerDetails._id);
+      if (!offerId) {
+        console.error('Invalid offer ID');
+        return;
+      }
+
+      // Fetch updated offer details
+      const updatedOffer = await offerService.getOfferById(offerId);
+      
+      // Create notification for payment completion
+      const notificationContent = {
+        type: 'offer' as const,
+        content: `Payment completed for ${message.property.propertyName}`,
+        offerDetails: {
+          _id: updatedOffer._id,
+          amount: updatedOffer.amount,
+          currency: updatedOffer.currency,
+          currencySymbol: updatedOffer.currencySymbol,
+          duration: updatedOffer.duration,
+          securityDeposit: updatedOffer.securityDeposit,
+          moveInDate: updatedOffer.moveInDate,
+          status: updatedOffer.status,
+          totalAmount: updatedOffer.totalAmount,
+          propertyImage: message.property.images?.[0]
+        }
+      };
+
+      // Send payment completion notification
+      const senderId = getMongoId(message.sender._id);
+      const propertyId = getMongoId(message.property._id);
+
+      if (!senderId || !propertyId) {
+        throw new Error('Invalid sender or property ID');
+      }
+
+      await messageService.sendMessage(
+        senderId,
+        propertyId,
+        JSON.stringify(notificationContent)
+      );
+
+      console.log('Payment completed and status updated:', updatedOffer);
+      
+      // Close payment modal
+      setShowPaymentModal(false);
+      
+    } catch (error) {
+      console.error('Error updating offer status after payment:', error);
+      // Optionally show error notification to user
+      alert('Error updating offer status. Please contact support if payment was completed.');
+    }
   };
 
   const handlePropertyClick = () => {
@@ -87,15 +145,17 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
 
   const isLister = getMongoId(user?._id) === getMongoId(message.receiver._id);
   const isRenter = getMongoId(user?._id) === getMongoId(message.sender._id);
-  const showPaymentButton = isRenter && offerDetails.status === 'accepted';
-  const showActionButtons = isLister && offerDetails.status === 'pending';
 
   const getStatusMessage = () => {
     switch (offerDetails.status) {
       case 'accepted':
-        return isRenter ? 'Please proceed with payment' : 'Waiting for payment';
+        return isRenter 
+          ? 'Your offer has been accepted! Please proceed with the initial payment.' 
+          : 'Waiting for tenant to complete initial payment';
       case 'rejected':
-        return 'Offer was rejected';
+        return isRenter 
+          ? 'Your offer was not accepted. You can revise your offer or close this chat.'
+          : 'You have rejected this offer.';
       case 'pending':
         return 'Awaiting response';
       default:
@@ -103,11 +163,22 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
     }
   };
 
+  const getStatusColor = (status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'withdrawn' | 'completed'): string => {
+    const colors = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      accepted: 'bg-green-100 text-green-800',
+      rejected: 'bg-red-100 text-red-800',
+      expired: 'bg-gray-100 text-gray-800',
+      withdrawn: 'bg-gray-100 text-gray-800',
+      completed: 'bg-blue-100 text-blue-800'
+    };
+    return colors[status] || colors.pending;
+  };
+
   return (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-sm rounded-lg overflow-hidden shadow-lg 
                       ${isOwn ? 'bg-celadon/10' : 'bg-white'}`}>
-        {/* Property Image Banner - Clickable */}
         <div 
           onClick={handlePropertyClick}
           className="cursor-pointer relative group"
@@ -124,20 +195,16 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
           </div>
         </div>
         
-        {/* Offer Details */}
         <div className="px-4 py-3">
           <div className="font-bold text-lg mb-2">Rental Offer</div>
           
-          {/* Status Badge */}
           <div className={`inline-block px-3 py-1 rounded-full text-sm font-semibold 
                           ${getStatusColor(offerDetails.status)} mb-1`}>
             {offerDetails.status.charAt(0).toUpperCase() + offerDetails.status.slice(1)}
           </div>
           
-          {/* Status Message */}
           <p className="text-sm text-gray-600 mb-3">{getStatusMessage()}</p>
           
-          {/* Offer Details */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Monthly Rent:</span>
@@ -163,51 +230,39 @@ const OfferMessage: React.FC<OfferMessageProps> = ({ message, isOwn }) => {
             </div>
           </div>
 
-          {/* Action Buttons for Lister */}
-          {showActionButtons && (
-            <div className="flex justify-end space-x-2 mt-4">
-              <button
-                onClick={() => handleAction('reject')}
-                className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200"
-              >
-                Reject
-              </button>
-              <button
-                onClick={() => handleAction('accept')}
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
-              >
-                Accept
-              </button>
-            </div>
-          )}
-
-          {/* Payment Button for Renter */}
-          {showPaymentButton && (
-            <div className="mt-4">
-              <button
-                onClick={handleInitiatePayment}
-                className="w-full py-2 bg-celadon text-white rounded-lg hover:bg-opacity-90"
-              >
-                Proceed to Payment
-              </button>
-            </div>
-          )}
+          <OfferActions 
+            status={offerDetails.status}
+            isLister={isLister}
+            isRenter={isRenter}
+            onAccept={() => handleAction('accept')}
+            onReject={() => handleAction('reject')}
+            onInitiatePayment={handleInitiatePayment}
+          />
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center overflow-y-auto">
+          <div className="relative bg-white rounded-lg w-full max-w-3xl m-4">
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              ×
+            </button>
+            <PaymentFlow
+              amount={offerDetails.securityDeposit + offerDetails.amount} // First month + deposit
+              propertyName={message.property.propertyName}
+              onPaymentComplete={handlePaymentComplete}
+              offerId={getMongoId(offerDetails._id) || ''}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
-};
-
-const getStatusColor = (status: OfferDetails['status']): string => {
-  const colors = {
-    pending: 'bg-yellow-100 text-yellow-800',
-    accepted: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
-    expired: 'bg-gray-100 text-gray-800',
-    withdrawn: 'bg-gray-100 text-gray-800',
-    completed: 'bg-blue-100 text-blue-800'
-  };
-  return colors[status] || colors.pending;
 };
 
 export default OfferMessage;
