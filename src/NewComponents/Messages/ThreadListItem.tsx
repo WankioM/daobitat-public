@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { FaUser } from 'react-icons/fa';
-import { ThreadListItemProps } from './types';
+import { ThreadListItemProps } from '../../types/messages'; 
 
 const ThreadListItem: React.FC<ThreadListItemProps> = ({ contact, isSelected, onClick }) => {
   return (

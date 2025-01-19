@@ -157,6 +157,7 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({
       type: 'offer',
       content: `New offer for ${propertyName}`,
       offerDetails: {
+        _id: offer._id,  // Use MongoDB's _id directly
         amount: offerData.amount,
         currency: offerData.currency,
         currencySymbol: offerData.currencySymbol,
@@ -164,6 +165,7 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({
         status: 'pending',
         securityDeposit: offerData.securityDeposit,
         moveInDate: offerData.moveInDate,
+        totalAmount,
         propertyImage: undefined // Can be added if property images are available
       }
     })

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ChatWindowProps } from './types';
+import { ChatWindowProps } from '../../types/messages';
 import { FaUser, FaPaperPlane } from 'react-icons/fa';
 import { formatDistanceToNow } from 'date-fns';
 import { useUser } from '../../NewContexts/UserContext';

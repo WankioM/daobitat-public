@@ -3,14 +3,15 @@ import { useUser } from '../../NewContexts/UserContext';
 import { useLocation } from 'react-router-dom';
 import ThreadList from './ThreadList';
 import ChatWindow from './ChatWindow';
-import { ChatContact, Message } from './types';
+import { ChatContact, Message } from '../../types/messages';
 import { messageService } from '../../services/messageService';
+import { User } from '../../services/offerService';
 
 const Messages: React.FC = () => {
   const { user } = useUser();
   const location = useLocation();
   const [contacts, setContacts] = useState<ChatContact[]>([]);
-  const [selectedContact, setSelectedContact] = useState<ChatContact | undefined>();
+  const [selectedContact, setSelectedContact] = useState<ChatContact | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,12 +25,14 @@ const Messages: React.FC = () => {
         const newContact: ChatContact = {
           user: {
             _id: threadData.ownerId,
-            name: threadData.ownerName
-          },
+            name: threadData.ownerName,
+            role: 'owner', // Adding required role field
+            email: threadData.ownerEmail // Optional: if available
+          } as User,
           property: {
             _id: threadData.propertyId,
             propertyName: threadData.propertyName,
-            propertyType: '' // You might want to include this in the threadData
+            propertyType: threadData.propertyType || '' // Providing default value
           },
           unreadCount: 0
         };
@@ -69,35 +72,42 @@ const Messages: React.FC = () => {
           const otherUser = message.sender._id === user?._id ? message.receiver : message.sender;
           const contactKey = `${otherUser._id}-${message.property._id}`;
 
+          const currentContact: ChatContact = {
+            user: otherUser,
+            property: {
+              _id: message.property._id,
+              propertyName: message.property.propertyName,
+              propertyType: message.property.propertyType || '',
+              images: message.property.images
+            },
+            lastMessage: message,
+            unreadCount: message.receiver._id === user?._id && !message.read ? 1 : 0
+          };
+
           if (!contactsMap.has(contactKey)) {
-            contactsMap.set(contactKey, {
-              user: otherUser,
-              property: message.property,
-              lastMessage: message,
-              unreadCount: message.receiver._id === user?._id && !message.read ? 1 : 0
-            });
+            contactsMap.set(contactKey, currentContact);
           } else {
-            const contact = contactsMap.get(contactKey)!;
-            if (new Date(message.createdAt) > new Date(contact.lastMessage!.createdAt)) {
-              contact.lastMessage = message;
+            const existingContact = contactsMap.get(contactKey)!;
+            if (new Date(message.createdAt) > new Date(existingContact.lastMessage?.createdAt || 0)) {
+              existingContact.lastMessage = message;
             }
             if (message.receiver._id === user?._id && !message.read) {
-              contact.unreadCount++;
+              existingContact.unreadCount++;
             }
           }
         });
 
+        const newContacts = Array.from(contactsMap.values());
         setContacts(prev => {
-          const existingContacts = Array.from(contactsMap.values());
           // Preserve any new contacts that might have been added
-          const newContacts = prev.filter(contact => 
-            !existingContacts.some(
+          const preservedContacts = prev.filter(contact => 
+            !newContacts.some(
               existing => 
                 existing.user._id === contact.user._id && 
                 existing.property._id === contact.property._id
             )
           );
-          return [...existingContacts, ...newContacts];
+          return [...newContacts, ...preservedContacts];
         });
       } catch (error) {
         console.error('Error fetching messages:', error);
@@ -120,7 +130,7 @@ const Messages: React.FC = () => {
           selectedContact.user._id,
           selectedContact.property._id
         );
-        setMessages(conversationMessages);
+        setMessages(conversationMessages as Message[]);
       } catch (error) {
         console.error('Error fetching conversation:', error);
       } finally {
@@ -141,7 +151,7 @@ const Messages: React.FC = () => {
         content
       );
       
-      setMessages(prev => [...prev, newMessage]);
+      setMessages(prev => [...prev, newMessage as Message]);
       
       // Update contacts list with new message
       setContacts(prev => {
@@ -154,7 +164,7 @@ const Messages: React.FC = () => {
         if (contactIndex !== -1) {
           updated[contactIndex] = {
             ...updated[contactIndex],
-            lastMessage: newMessage
+            lastMessage: newMessage as Message
           };
         }
         return updated;
@@ -164,13 +174,17 @@ const Messages: React.FC = () => {
     }
   };
 
+  const handleContactSelect = (contact: ChatContact) => {
+    setSelectedContact(contact);
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] bg-white">
       <div className="w-1/3 border-r border-gray-200 h-full overflow-hidden">
         <ThreadList
           contacts={contacts}
           selectedContactId={selectedContact?.user._id}
-          onSelectContact={setSelectedContact}
+          onSelectContact={handleContactSelect}
         />
       </div>
       <div className="flex-1 h-full overflow-hidden">

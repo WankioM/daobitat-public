@@ -1,6 +1,6 @@
 import React from 'react';
 import ThreadListItem from './ThreadListItem';
-import { ThreadListProps, ChatContact } from './types';
+import { ThreadListProps, ChatContact } from '../../types/messages'; 
 
 const ThreadList: React.FC<ThreadListProps> = ({
   contacts,
@@ -28,11 +28,11 @@ const ThreadList: React.FC<ThreadListProps> = ({
       <div className="flex-1 overflow-y-auto">
         {contacts.map((contact: ChatContact) => (
           <ThreadListItem
-            key={`${contact.user._id}-${contact.property._id}`}
-            contact={contact}
-            isSelected={contact.user._id === selectedContactId}
-            onClick={() => onSelectContact(contact)}
-          />
+          key={`${contact.user._id}-${contact.property._id}`}
+          contact={contact}
+          isSelected={contact.user._id === selectedContactId}
+          onClick={() => onSelectContact(contact)}
+        />
         ))}
       </div>
     </div>
