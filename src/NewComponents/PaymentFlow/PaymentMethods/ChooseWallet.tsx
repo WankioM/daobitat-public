@@ -84,10 +84,20 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
         case 'metamask':
           return typeof window.ethereum !== 'undefined';
         case 'braavos':
-          // Enhanced Braavos detection
+          // Improved Braavos detection without using wallets array
+          console.log('Checking Braavos:', {
+            starknetExists: !!window.starknet,
+            providerName: window.starknet?.provider?.name,
+            currentWalletId: window.starknet?.id
+          });
+          
           return !!window.starknet && (
-            window.starknet.provider?.name === 'Braavos' ||
-            window.starknet.id?.toLowerCase() === 'braavos'
+            // Check provider name (case insensitive)
+            window.starknet.provider?.name?.toLowerCase().includes('braavos') ||
+            // Check wallet ID (case insensitive)
+            window.starknet.id?.toLowerCase().includes('braavos') ||
+            // Check if browser has Braavos
+            typeof window.starknet_braavos !== 'undefined'
           );
         case 'argent':
           // Enhanced Argent detection
@@ -105,7 +115,14 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div className="bg-white rounded-lg p-6 max-w-md w-full m-4">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
@@ -113,8 +130,12 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
             <h3 className="text-xl font-semibold">Choose Wallet</h3>
           </div>
           <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-gray-500 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors"
             disabled={isConnecting}
           >
             <FaTimes className="text-xl" />

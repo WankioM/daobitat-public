@@ -10,7 +10,7 @@ export const BraavosConfig: WalletConfig = {
   isInstalled: () => {
     try {
       return !!(window.starknet?.isConnected && 
-             window.starknet?.provider?.name === 'Braavos');
+             window.starknet?.provider?.name?.toLowerCase().includes('braavos'));
     } catch {
       return false;
     }
@@ -20,7 +20,7 @@ export const BraavosConfig: WalletConfig = {
     try {
       // First check if already connected
       if (window.starknet?.isConnected && 
-          window.starknet?.provider?.name === 'Braavos') {
+          window.starknet?.provider?.name?.toLowerCase().includes('braavos')) {
         await window.starknet.enable();
         return window.starknet.selectedAddress;
       }
@@ -28,7 +28,8 @@ export const BraavosConfig: WalletConfig = {
       // If not connected, try to connect
       const starknet = await connect({
         modalMode: 'alwaysAsk',
-        modalTheme: 'light'
+        modalTheme: 'light',
+        // Remove walletId as it's not in ConnectOptions type
       });
 
       if (!starknet) {
@@ -38,7 +39,8 @@ export const BraavosConfig: WalletConfig = {
       // Enable the wallet and get permissions
       await starknet.enable();
       
-      if (!starknet.isConnected || starknet.provider.name !== 'Braavos') {
+      if (!starknet.isConnected || 
+          !starknet.provider?.name?.toLowerCase().includes('braavos')) {
         throw new Error('Connected wallet is not Braavos');
       }
 
