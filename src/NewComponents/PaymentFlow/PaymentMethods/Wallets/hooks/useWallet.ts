@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { WalletType } from '../../ChooseWallet';
+import { WalletType } from '../walletTypes';
 import { getWalletConfig } from '../config';
 
 interface WalletState {

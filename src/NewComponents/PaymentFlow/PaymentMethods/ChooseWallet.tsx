@@ -1,7 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaWallet, FaTimes } from 'react-icons/fa';
+import { WalletType } from './Wallets/walletTypes';
+import { ArgentConfig } from './Wallets/config/ArgentConfig';
+import { BraavosConfig } from './Wallets/config/BraavosConfig';
+import { getWalletConfig } from './Wallets/config';
 
-export type WalletType = 'metamask' | 'braavos' | 'argent';
+import type { StarknetWindowObject } from 'get-starknet-core';
+
+declare global {
+  interface Window {
+    ethereum: any;
+    starknet?: StarknetWindowObject;
+  }
+}
 
 interface ChooseWalletProps {
   onWalletSelect: (walletType: WalletType) => Promise<void>;
@@ -9,31 +20,20 @@ interface ChooseWalletProps {
   isConnecting: boolean;
 }
 
-interface WalletOption {
-  type: WalletType;
-  name: string;
-  icon: string;
-  description: string;
-}
-
-const walletOptions: WalletOption[] = [
+const walletOptions = [
   {
-    type: 'metamask',
+    type: 'metamask' as WalletType,
     name: 'MetaMask',
-    icon: '/images/metamask-icon.png',
+    icon: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/MetaMask_Fox.svg/768px-MetaMask_Fox.svg.png',
     description: 'Connect using MetaMask wallet'
   },
   {
-    type: 'braavos',
-    name: 'Braavos',
-    icon: '/images/braavos-icon.png',
-    description: 'Connect using Braavos wallet'
+    ...BraavosConfig,
+    icon: 'https://play-lh.googleusercontent.com/HUk0fYbBtiJUFO1H_GCYq4p6kPxifsRP5vqHG96ZeK38-hepdPUU0GMprslWvItn3WUj=w240-h480-rw'
   },
   {
-    type: 'argent',
-    name: 'Argent',
-    icon: '/images/argent-icon.png',
-    description: 'Connect using Argent wallet'
+    ...ArgentConfig,
+    icon: 'https://play-lh.googleusercontent.com/P-xt-cfYUtwVQ3YsNb5yd5_6MzCHmcKAbRkt-up8Ga44x_OCGLy4WFxsGhxfJaSLEw=w240-h480-rw'
   }
 ];
 
@@ -43,22 +43,64 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
   isConnecting
 }) => {
   const [selectedWallet, setSelectedWallet] = useState<WalletType | null>(null);
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  useEffect(() => {
+    const checkWallets = () => {
+      // Force a re-render to update wallet states
+      setForceUpdate(prev => prev + 1);
+    };
+
+    // Check initially and every 1 second
+    const interval = setInterval(checkWallets, 1000);
+    
+    // Cleanup
+    return () => clearInterval(interval);
+  }, []);
 
   const handleWalletClick = async (walletType: WalletType) => {
-    setSelectedWallet(walletType);
-    await onWalletSelect(walletType);
+    try {
+      setSelectedWallet(walletType);
+      const config = getWalletConfig(walletType);
+      
+      if (!config) {
+        throw new Error(`Configuration not found for ${walletType}`);
+      }
+
+      // Use the wallet's configuration to connect
+      await onWalletSelect(walletType);
+      
+    } catch (error) {
+      console.error(`Error connecting to ${walletType}:`, error);
+      setSelectedWallet(null);
+      // Show error to user
+      alert(`Failed to connect to ${walletType}. Please try again.`);
+    }
   };
 
   const isWalletInstalled = (walletType: WalletType): boolean => {
-    switch (walletType) {
-      case 'metamask':
-        return typeof window.ethereum !== 'undefined';
-      case 'braavos':
-        return typeof window.braavos !== 'undefined';
-      case 'argent':
-        return typeof window.argent !== 'undefined';
-      default:
-        return false;
+    try {
+      switch (walletType) {
+        case 'metamask':
+          return typeof window.ethereum !== 'undefined';
+        case 'braavos':
+          // Enhanced Braavos detection
+          return !!window.starknet && (
+            window.starknet.provider?.name === 'Braavos' ||
+            window.starknet.id?.toLowerCase() === 'braavos'
+          );
+        case 'argent':
+          // Enhanced Argent detection
+          return !!window.starknet && (
+            window.starknet.provider?.name?.toLowerCase().includes('argentx') ||
+            window.starknet.id?.toLowerCase() === 'argentx'
+          );
+        default:
+          return false;
+      }
+    } catch (error) {
+      console.error(`Error checking ${walletType} installation:`, error);
+      return false;
     }
   };
 
@@ -80,32 +122,39 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
         </div>
 
         <div className="space-y-3">
-          {walletOptions.map((wallet) => (
-            <button
-              key={wallet.type}
-              onClick={() => handleWalletClick(wallet.type)}
-              disabled={isConnecting || !isWalletInstalled(wallet.type)}
-              className={`w-full p-4 border rounded-lg flex items-center gap-4 transition-colors
-                ${selectedWallet === wallet.type ? 'border-celadon bg-celadon/10' : ''}
-                ${isConnecting || !isWalletInstalled(wallet.type) 
-                  ? 'opacity-50 cursor-not-allowed' 
-                  : 'hover:border-gray-300'}`}
-            >
-              <img 
-                src={wallet.icon} 
-                alt={wallet.name} 
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="text-left">
-                <div className="font-medium">{wallet.name}</div>
-                <div className="text-sm text-gray-600">
-                  {isWalletInstalled(wallet.type) 
-                    ? wallet.description
-                    : `${wallet.name} not installed`}
-                </div>
+          {walletOptions.map((wallet) => {
+            const isInstalled = isWalletInstalled(wallet.type);
+            return (
+              <div
+                key={wallet.type}
+                className={`w-full p-4 border rounded-lg flex items-center gap-4 transition-colors
+                  ${selectedWallet === wallet.type ? 'border-celadon bg-celadon/10' : ''}
+                  ${isConnecting || !isInstalled 
+                    ? 'opacity-50' 
+                    : 'hover:border-gray-300'}`}
+              >
+                <button
+                  onClick={() => handleWalletClick(wallet.type)}
+                  disabled={isConnecting || !isInstalled}
+                  className="flex items-center gap-4 w-full"
+                >
+                  <img 
+                    src={wallet.icon} 
+                    alt={wallet.name} 
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div className="text-left">
+                    <div className="font-medium">{wallet.name}</div>
+                    <div className="text-sm text-gray-600">
+                      {isInstalled 
+                        ? wallet.description
+                        : `${wallet.name} not installed`}
+                    </div>
+                  </div>
+                </button>
               </div>
-            </button>
-          ))}
+            );
+          })}
         </div>
 
         {isConnecting && (

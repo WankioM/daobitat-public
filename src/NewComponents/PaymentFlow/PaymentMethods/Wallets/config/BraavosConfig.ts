@@ -8,13 +8,24 @@ export const BraavosConfig: WalletConfig = {
   description: 'Connect using Braavos wallet',
   
   isInstalled: () => {
-    // Check if Starknet wallet is available and if it's Braavos
-    return typeof window.starknet !== 'undefined' &&
-           window.starknet?.provider?.name === 'Braavos';
+    try {
+      return !!(window.starknet?.isConnected && 
+             window.starknet?.provider?.name === 'Braavos');
+    } catch {
+      return false;
+    }
   },
   
   connect: async () => {
     try {
+      // First check if already connected
+      if (window.starknet?.isConnected && 
+          window.starknet?.provider?.name === 'Braavos') {
+        await window.starknet.enable();
+        return window.starknet.selectedAddress;
+      }
+
+      // If not connected, try to connect
       const starknet = await connect({
         modalMode: 'alwaysAsk',
         modalTheme: 'light'
@@ -24,19 +35,20 @@ export const BraavosConfig: WalletConfig = {
         throw new Error('Failed to connect to Braavos wallet');
       }
 
-      // Verify we're connected to Braavos
-      if (starknet.provider.name !== 'Braavos') {
-        throw new Error('Selected wallet is not Braavos');
-      }
-
+      // Enable the wallet and get permissions
       await starknet.enable();
-      const userAddress = starknet.selectedAddress;
-
-      if (!userAddress) {
-        throw new Error('No address found');
+      
+      if (!starknet.isConnected || starknet.provider.name !== 'Braavos') {
+        throw new Error('Connected wallet is not Braavos');
       }
 
-      return userAddress;
+      const address = starknet.selectedAddress;
+      if (!address) {
+        throw new Error('No wallet address found');
+      }
+
+      return address;
+
     } catch (error) {
       console.error('Braavos connection error:', error);
       throw error;
@@ -45,7 +57,9 @@ export const BraavosConfig: WalletConfig = {
   
   disconnect: async () => {
     try {
-      await disconnect();
+      if (window.starknet?.isConnected) {
+        await disconnect();
+      }
     } catch (error) {
       console.error('Braavos disconnection error:', error);
       throw error;
