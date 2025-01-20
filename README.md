@@ -2,6 +2,20 @@
 
 ![DAO-Bitat Banner](https://your-image-url.com/banner.png)
 
+## Project Repositories
+
+This project is split across three repositories:
+
+1. **Frontend (Current Repository)**: [daobitat-public](https://github.com/WankioM/daobitat-public)
+   - Main public repository containing the user interface and client-side logic
+
+2. **Backend**: [daobitat-backend](https://github.com/WankioM/daobitat-backend)
+   - Backend repository (temporarily public)
+   - Contains API endpoints, database management, and server-side logic
+
+3. **Smart Contracts**: [daobitat-starknet-contract](https://github.com/WankioM/daobitat-starknet-contract)
+   - StarkNet smart contracts for property management and transactions
+
 DAO-Bitat is a decentralized property listing platform that revolutionizes real estate investing through blockchain technology. Our platform brings transparency, accessibility, and democratization to real estate investments by enabling fractional ownership of Real World Assets (RWA).
 
 ## 🌟 Features
@@ -9,7 +23,7 @@ DAO-Bitat is a decentralized property listing platform that revolutionizes real 
 ### For Property Seekers
 - Secure property search and verification
 - Real-time messaging with property owners
-- Digital wallet integration
+- Wallet integration (Braavos, Argent)
 - Property viewing scheduling
 - Smart contract-based agreements
 - Wishlist management
@@ -41,12 +55,11 @@ DAO-Bitat is a decentralized property listing platform that revolutionizes real 
 - RESTful API endpoints
 
 ### Blockchain Integration
-- Stellar smart contracts
+- StarkNet smart contracts
 - Property tokenization
 - Secure transactions
 - Ownership verification
-- Digital wallet integration
-
+- Digital wallet integration (Braavos, Argent)
 ## 🚀 Getting Started
 
 ### Prerequisites
