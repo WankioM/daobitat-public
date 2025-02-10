@@ -14,6 +14,7 @@ import Map from './NewComponents/Maps/Map';
 import ContactPage from './NewComponents/Contact/ContactUs';
 import PropertyTab from './NewComponents/Recommendations/PropertyTab/PropertyTab';
 
+
 const App: React.FC = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   

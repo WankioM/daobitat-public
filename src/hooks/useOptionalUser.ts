@@ -1,6 +1,7 @@
 // src/hooks/useOptionalUser.ts
 import { useContext } from 'react';
-import { UserContext, User, UserContextType } from '../NewContexts/UserContext';
+import { UserContext } from '../NewContexts/UserContext';
+import { User } from '../types/auth';
 
 interface OptionalUserContextReturn {
   user: User | null;

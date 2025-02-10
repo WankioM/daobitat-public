@@ -6,13 +6,11 @@ import { useUser } from '../../NewContexts/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { FaWallet, FaUser, FaInfoCircle } from 'react-icons/fa';
 import WalletSignUpInfo from '../Docs/WalletSignUpInfo';
-import ChooseWallet from '../PaymentFlow/PaymentMethods/ChooseWallet';
-import { WalletType } from '../PaymentFlow/PaymentMethods/Wallets/walletTypes';
+import WalletSelector from '../Wallet/WalletSelector';
 
 interface WalletSignUpProps {
   form: SignUpForm;
   handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleWalletSignUp: () => Promise<void>;
   setError: (error: string | null) => void;
   setIsLoading: (loading: boolean) => void;
 }
@@ -29,31 +27,61 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
   const [isWalletConnecting, setIsWalletConnecting] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
-  const handleWalletSelect = async (walletType: WalletType) => {
+  const handleWalletSelect = async (walletId: string) => {
     try {
       setIsWalletConnecting(true);
       setIsLoading(true);
       setError(null);
 
-      // Here you would implement the wallet connection logic
-      // This would depend on your wallet connection implementation
+      let provider;
       let walletAddress;
-      
-      if (walletType === 'metamask') {
-        const accounts = await window.ethereum.request({ 
-          method: 'eth_requestAccounts' 
-        });
-        walletAddress = accounts[0];
-      } else if (window.starknet) {
-        await window.starknet.enable();
-        walletAddress = window.starknet.selectedAddress;
+
+      switch (walletId) {
+        case 'metamask':
+          if (!window.ethereum) {
+            setError('Please install MetaMask to continue');
+            return;
+          }
+          provider = window.ethereum;
+          const accounts = await provider.request({ 
+            method: 'eth_requestAccounts' 
+          });
+          walletAddress = accounts[0];
+          break;
+          
+        case 'rainbow':
+          // Rainbow wallet integration
+          setError('Rainbow wallet integration coming soon');
+          return;
+          
+        case 'braavos':
+          if (!window.starknet) {
+            setError('Please install Braavos wallet to continue');
+            return;
+          }
+          await window.starknet.enable();
+          walletAddress = window.starknet.selectedAddress;
+          break;
+          
+        case 'argent':
+          if (!window.starknet) {
+            setError('Please install Argent X wallet to continue');
+            return;
+          }
+          await window.starknet.enable();
+          walletAddress = window.starknet.selectedAddress;
+          break;
+          
+        default:
+          setError('Unsupported wallet');
+          return;
       }
 
       if (!walletAddress) {
         throw new Error('Failed to get wallet address');
       }
 
-      // Update the form with the wallet address
+      // Update form with wallet address
       handleChange({
         target: {
           name: 'walletAddress',
@@ -63,7 +91,12 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
 
       setShowWalletModal(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to connect wallet');
+      console.error('Wallet connection error:', err);
+      if (err.code === 4001) {
+        setError('User rejected the connection request');
+      } else {
+        setError(err.message || 'Failed to connect wallet');
+      }
     } finally {
       setIsWalletConnecting(false);
       setIsLoading(false);
@@ -102,18 +135,18 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
     <div className="space-y-4">
       {/* Username Input */}
       <div>
-        <label className="block text-[#b7e3cc] mb-2 font-[Helvetica-Regular]">Username</label>
+        <label className="block text-gray-700 mb-2 font-helvetica-regular">Username</label>
         <div className="relative">
-          <FaUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/40" />
+          <FaUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             name="name"
             value={form.name}
             onChange={handleChange}
-            className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-11
-                     text-white placeholder-white/40 font-[Helvetica Light-Regular]
-                     focus:outline-none focus:border-[#b7e3cc]/50"
-            placeholder="Choose a username (can be anonymous)"
+            className="w-full bg-white border border-gray-200 rounded-xl py-3 px-11
+                     text-gray-900 placeholder-gray-400 font-helvetica-light
+                     focus:outline-none focus:border-[#24191E]"
+            placeholder="Choose a username"
             required
           />
         </div>
@@ -121,17 +154,17 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
 
       {/* Wallet Address Input */}
       <div>
-        <label className="block text-[#b7e3cc] mb-2 font-[Helvetica-Regular]">Wallet Address</label>
+        <label className="block text-gray-700 mb-2 font-helvetica-regular">Wallet Address</label>
         <div className="relative">
-          <FaWallet className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white/40" />
+          <FaWallet className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             name="walletAddress"
             value={form.walletAddress}
             onChange={handleChange}
-            className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-11
-                     text-white placeholder-white/40 font-[Helvetica Light-Regular]
-                     focus:outline-none focus:border-[#b7e3cc]/50"
+            className="w-full bg-white border border-gray-200 rounded-xl py-3 px-11
+                     text-gray-900 placeholder-gray-400 font-helvetica-light
+                     focus:outline-none focus:border-[#24191E]"
             placeholder="Connect wallet to get address"
             required
             readOnly
@@ -142,7 +175,7 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
       {/* Info Button */}
       <button
         onClick={() => setShowInfo(true)}
-        className="text-black hover:text-[#a5d1b9] flex items-center gap-2 mb-4"
+        className="text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm"
       >
         <FaInfoCircle />
         <span>Important Information About Wallet Signup</span>
@@ -151,10 +184,12 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
       {/* Connect Wallet Button */}
       <motion.button
         onClick={() => setShowWalletModal(true)}
-        className="w-full bg-[#b7e3cc] text-[#24191E] rounded-xl py-3 mt-6 font-[Helvetica-Regular]
-                 hover:bg-[#a5d1b9] transition-colors duration-300 flex items-center justify-center gap-2"
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+        className="w-full bg-white text-[#24191E] rounded-xl py-3 mt-6
+                 border-2 border-[#24191E] font-helvetica-regular
+                 hover:bg-[#24191E] hover:text-white transition-colors
+                 flex items-center justify-center gap-2"
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
       >
         <FaWallet />
         <span>Connect Wallet</span>
@@ -164,23 +199,21 @@ const WalletSignUp: React.FC<WalletSignUpProps> = ({
       {form.walletAddress && (
         <motion.button
           onClick={handleSubmit}
-          className="w-full bg-[#24191E] text-white rounded-xl py-3 mt-4 font-[Helvetica-Regular]
-                   hover:bg-opacity-90 transition-colors duration-300"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+          className="w-full bg-[#24191E] text-white rounded-xl py-3 mt-4 
+                   font-helvetica-regular hover:bg-opacity-90"
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.99 }}
         >
           Sign Up
         </motion.button>
       )}
 
       {/* Wallet Selection Modal */}
-      {showWalletModal && (
-        <ChooseWallet
-          onWalletSelect={handleWalletSelect}
-          onClose={() => setShowWalletModal(false)}
-          isConnecting={isWalletConnecting}
-        />
-      )}
+      <WalletSelector
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onSelectWallet={handleWalletSelect}
+      />
 
       {/* Info Modal */}
       <WalletSignUpInfo 

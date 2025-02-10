@@ -5,6 +5,7 @@ import { FaWallet, FaLongArrowAltRight } from 'react-icons/fa';
 import GoogleSignIn from './GoogleSignIn';
 import WalletSignIn from './WalletSignIn';
 import {AuthService} from '../../services/authService';
+import { User, AuthResponse } from '../../types/auth';
 import { useUser } from '../../NewContexts/UserContext';
 
 const SignIn = () => {
@@ -16,7 +17,7 @@ const SignIn = () => {
   const { setUser } = useUser();
 
   const handleSignIn = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Prevent form submission
+    e.preventDefault(); 
     
     try {
       if (!email || !password) {
@@ -83,7 +84,7 @@ const SignIn = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-lg border border-gray-100 rounded-2xl p-8 sm:p-12 bg-white shadow-sm"
         >
-          <div className="space-y-10 mt-10">
+          <div className="space-y-6">
             <div className="space-y-2">
               <h2 className="font-helvetica-regular text-[#24191E] text-4xl sm:text-5xl font-bold">
                 Welcome back

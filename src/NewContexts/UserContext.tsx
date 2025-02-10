@@ -1,32 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-export interface User {
-  _id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  walletAddress?: string;
-  role: 'lister' | 'agent' | 'buyer' | 'renter';
-  profileImage?: string;
-  verified: {
-    email: boolean;
-    phone: boolean;
-    wallet: boolean;
-  };
-  properties: string[];
-  wishlist: string[];
-  loans: string[];
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface UserContextType {
-  user: User | null;
-  setUser: (user: User | null) => void;
-  signOutUser: () => void;
-  updateUserWishlist: (propertyId: string, action: 'add' | 'remove') => void;
-  loading: boolean;
-}
+import { User, UserContextType } from '../types/auth';
 
 export const UserContext = createContext<UserContextType | undefined>(undefined);
 

@@ -2,30 +2,30 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaGoogle, FaWallet, FaChevronDown, FaLongArrowAltRight } from 'react-icons/fa';
-import GoogleSignUp from './GoogleSignUp';
-import WalletSignUp from './WalletSignUp';
-import { SignUpForm, AuthMethod, AuthMethodOption } from '../../types/auth';
+import { SignUpForm, AuthMethod, WalletAddress, UserRole } from '../../types/auth';
 import api from '../../services/api';
-
-
-const authMethods: AuthMethodOption[] = [
-  { id: 'email', icon: <FaGoogle />, label: 'Google' },
-  { id: 'wallet', icon: <FaWallet />, label: 'Wallet' }
-];
+import WalletSelector from '../Wallet/WalletSelector';
+import { useUser } from '../../NewContexts/UserContext';
+import PhoneSignUp from './PhoneSignUp';
+import GoogleSignUp from './GoogleSignUp';
 
 const SignUp = () => {
+  const navigate = useNavigate();
+  const { setUser } = useUser();
+  
   const [form, setForm] = useState<SignUpForm>({
     name: '',
     email: '',
     password: '',
-    phone: '',
-    walletAddress: '',
-    role: ''
+    walletAddress: undefined,
+    role: '' as UserRole,
+    phone: undefined
   });
+  
   const [activeMethod, setActiveMethod] = useState<AuthMethod>('email');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const [showWalletModal, setShowWalletModal] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -43,7 +43,7 @@ const SignUp = () => {
         return;
       }
 
-      const response = await api.post('/auth/signup', {
+      const response = await api.post('/auth/email/signup', {
         name: form.name,
         email: form.email,
         password: form.password,
@@ -53,6 +53,7 @@ const SignUp = () => {
       if (response.data?.data?.token) {
         localStorage.setItem('token', response.data.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        setUser(response.data.data.user);
         navigate('/');
       }
     } catch (err: any) {
@@ -62,44 +63,140 @@ const SignUp = () => {
     }
   };
 
-  const handleWalletSignUp = async (): Promise<void> => {
+  const handleWalletSelect = async (walletId: string) => {
     try {
-      if (!form.walletAddress || !form.role) {
-        setError('Wallet address and role are required');
+      setIsLoading(true);
+      setError(null);
+
+      let walletAddress: WalletAddress | undefined;
+
+      switch (walletId) {
+        case 'metamask':
+          if (!window.ethereum) {
+            setError('Please install MetaMask to continue');
+            return;
+          }
+          const accounts = await window.ethereum.request({ 
+            method: 'eth_requestAccounts' 
+          });
+          walletAddress = accounts[0] as WalletAddress;
+          break;
+          
+        case 'rainbow':
+          setError('Rainbow wallet integration coming soon');
+          return;
+          
+        case 'braavos':
+          if (!window.starknet) {
+            setError('Please install Braavos wallet to continue');
+            return;
+          }
+          await window.starknet.enable();
+          walletAddress = window.starknet.selectedAddress as WalletAddress;
+          break;
+          
+        case 'argent':
+          if (!window.starknet) {
+            setError('Please install Argent X wallet to continue');
+            return;
+          }
+          await window.starknet.enable();
+          walletAddress = window.starknet.selectedAddress as WalletAddress;
+          break;
+          
+        default:
+          setError('Unsupported wallet');
+          return;
+      }
+
+      if (!walletAddress) {
+        throw new Error('Failed to get wallet address');
+      }
+
+      setForm(prev => ({ ...prev, walletAddress }));
+      setShowWalletModal(false);
+      setActiveMethod('wallet');
+
+    } catch (err: any) {
+      console.error('Wallet connection error:', err);
+      if (err.code === 4001) {
+        setError('User rejected the connection request');
+      } else {
+        setError(err.message || 'Failed to connect wallet');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleWalletSignUp = async () => {
+    try {
+      if (!form.walletAddress || !form.name || !form.role) {
+        setError('Wallet address, username, and role are required');
         return;
       }
-      setError('Wallet sign-up coming soon!');
+
+      setIsLoading(true);
+      setError(null);
+
+      const response = await api.post('/auth/wallet/signup', {
+        walletAddress: form.walletAddress,
+        name: form.name,
+        role: form.role
+      });
+
+      localStorage.setItem('token', response.data.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      setUser(response.data.data.user);
+      
+      navigate('/');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Failed to sign up with wallet');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneSignUp = async () => {
+    // Phone sign up logic will be handled in PhoneSignUp component
+    try {
+      setIsLoading(true);
+      // Implementation details in PhoneSignUp component
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign up with phone');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="h-screen flex overflow-hidden">
+    <div className="min-h-screen flex overflow-hidden">
       {/* Left Section - Sign Up Form */}
-      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center pt-20 px-6 sm:px-12">
+      <div className="w-full lg:w-1/2 bg-white flex items-center justify-center px-6 sm:px-12 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-lg border border-gray-100 rounded-2xl p-8 sm:p-12 bg-white shadow-sm"
+          className="w-full max-w-lg"
         >
-          <div className="space-y-10">
+          <div className="space-y-8">
+            {/* Header */}
             <div className="space-y-2">
-              <h2 className="font-helvetica-regular text-[#24191E] text-4xl sm:text-5xl font-bold">
+              <h1 className="text-4xl font-bold text-gray-900">
                 Create Account
-              </h2>
-              <p className="font-helvetica-light text-gray-500 text-base sm:text-lg">
+              </h1>
+              <p className="text-gray-600">
                 Join our community today
               </p>
             </div>
 
+            {/* Error Display */}
             {error && (
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-red-50 border border-red-100 rounded-xl p-4"
               >
-                <p className="text-red-500 text-sm text-center font-helvetica-light">
+                <p className="text-red-500 text-sm text-center">
                   {error}
                 </p>
               </motion.div>
@@ -107,18 +204,17 @@ const SignUp = () => {
 
             {/* Role Selection */}
             <div className="space-y-2">
-              <label className="block text-gray-700 font-helvetica-regular">Role</label>
+              <label className="block text-gray-700">Role</label>
               <div className="relative">
                 <select
                   name="role"
                   value={form.role}
                   onChange={handleChange}
                   className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] appearance-none font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
+                           appearance-none focus:outline-none focus:border-[#24191E]"
                   required
                 >
-                  <option value="" disabled>Select your role</option>
+                  <option value="">Select your role</option>
                   <option value="lister">Property Lister</option>
                   <option value="agent">Agent</option>
                   <option value="buyer">Buyer</option>
@@ -128,124 +224,107 @@ const SignUp = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
-              {/* Auth Methods */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {activeMethod === 'email' && (
-                  <GoogleSignUp
-                    role={form.role}
-                    setError={setError}
-                    setIsLoading={setIsLoading}
-                  />
-                )}
-                {activeMethod === 'wallet' && (
-                  <WalletSignUp
-                    form={form}
-                    handleChange={handleChange}
-                    handleWalletSignUp={handleWalletSignUp}
-                    setError={setError}
-                    setIsLoading={setIsLoading}
-                  />
-                )}
+            {/* Auth Methods */}
+            <div className="space-y-4 ">
+            <div className="flex space-x-4">
+
+              {/* Google Sign Up */}
+              <GoogleSignUp 
+                role={form.role}
+                setError={setError}
+                setIsLoading={setIsLoading}
+              />
+
+
+              {/* Wallet Sign Up */}
+              <motion.button
+                onClick={() => setShowWalletModal(true)}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                className="w-full bg-white border border-gray-200 text-gray-700 
+                         rounded-xl p-4 flex items-center justify-center gap-3 
+                         hover:bg-gray-50 transition-colors"
+              >
+                <FaWallet />
+                <span>Continue with Wallet</span>
+              </motion.button>
               </div>
 
               <div className="relative my-8">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
-                <div className="relative flex justify-center text-base">
-                  <span className="px-6 bg-white text-gray-400 font-helvetica-light">
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500">
                     or continue with email
                   </span>
                 </div>
               </div>
 
               {/* Email Form */}
-              <form onSubmit={handleEmailSignUp} className="space-y-6">
-                <input
-                  type="text"
-                  name="name"
-                  value={form.name}
-                  onChange={handleChange}
-                  placeholder="Full name"
-                  className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] placeholder-gray-400 font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
-                  required
-                />
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="Email address"
-                  className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] placeholder-gray-400 font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
-                  required
-                />
-                <input
-                  type="password"
-                  name="password"
-                  value={form.password || ''}
-                  onChange={handleChange}
-                  placeholder="Password"
-                  className="w-full bg-white border border-gray-200 rounded-xl p-4 
-                           text-[#24191E] placeholder-gray-400 font-helvetica-light
-                           focus:outline-none focus:border-[#24191E] transition-colors"
-                  required
-                />
+              <form onSubmit={handleEmailSignUp} className="space-y-4">
+                
+                <div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    placeholder="Email address"
+                    className="w-full border border-gray-200 rounded-xl p-4 
+                             placeholder-gray-400 focus:outline-none focus:border-[#24191E]"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    placeholder="Password"
+                    className="w-full border border-gray-200 rounded-xl p-4 
+                             placeholder-gray-400 focus:outline-none focus:border-[#24191E]"
+                    required
+                  />
+                </div>
 
                 <motion.button
                   type="submit"
                   disabled={isLoading}
                   whileHover={{ scale: isLoading ? 1 : 1.01 }}
                   whileTap={{ scale: isLoading ? 1 : 0.99 }}
-                  className="w-full bg-[#24191E] text-white rounded-xl 
-                           p-4 flex items-center justify-center gap-2 transition-colors
-                           font-helvetica-regular hover:bg-opacity-90
+                  className="w-full bg-[#24191E] text-white rounded-xl p-4 
+                           flex items-center justify-center gap-3
                            disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Signing up...' : 'Sign Up'}
                   {!isLoading && <FaLongArrowAltRight />}
                 </motion.button>
-
-                <motion.button
-                  type="button"
-                  onClick={() => setActiveMethod('wallet')}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full bg-white border border-gray-200 text-[#24191E] rounded-xl 
-                           p-4 flex items-center justify-center gap-2 transition-colors
-                           font-helvetica-regular hover:bg-gray-50"
-                >
-                  <FaWallet />
-                  Sign up with Wallet
-                </motion.button>
               </form>
             </div>
 
-            <div className="text-center">
-              <p className="text-gray-500 font-helvetica-light">
-                Already have an account?{' '}
-                <button
-                  onClick={() => navigate('/signin')}
-                  className="text-[#24191E] font-helvetica-regular hover:text-opacity-80"
-                >
-                  Sign in
-                </button>
-              </p>
-            </div>
+            {/* Sign In Link */}
+            <p className="text-center text-gray-600">
+              Already have an account?{' '}
+              <button
+                onClick={() => navigate('/signin')}
+                className="text-[#24191E] hover:underline"
+              >
+                Sign in
+              </button>
+            </p>
           </div>
         </motion.div>
       </div>
 
-      {/* Right Section - Background Image with Overlay */}
-      <div className="hidden lg:block w-1/2 relative">
+      {/* Right Section - Background Image */}
+      <div className="hidden lg:block lg:w-1/2 relative">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: 'url(https://i.pinimg.com/736x/af/04/db/af04db986bd49578b34959da802e79a3.jpg)'
+            backgroundImage: 'url(https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80)'
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[#24191E] via-[#24191E]/60 to-[#24191E]/40" />
@@ -257,17 +336,23 @@ const SignUp = () => {
               transition={{ delay: 0.2 }}
               className="space-y-6"
             >
-              <h1 className="text-white font-helvetica-light text-5xl leading-tight">
-                Join DAO-Bitat Today
-              </h1>
-              <p className="text-white/80 font-helvetica-light text-l">
-                Discover a new way to find, list, and manage properties with our innovative blockchain-powered platform.
-                Join our growing community of property enthusiasts.
+              <h2 className="text-white text-4xl font-light leading-tight">
+                Welcome to DAO-Bitat
+              </h2>
+              <p className="text-white/80 text-lg font-light">
+                Join our decentralized property marketplace. Buy, sell, and manage real estate assets with the power of blockchain technology.
               </p>
             </motion.div>
           </div>
         </div>
       </div>
+
+      {/* Wallet Selection Modal */}
+      <WalletSelector
+        isOpen={showWalletModal}
+        onClose={() => setShowWalletModal(false)}
+        onSelectWallet={handleWalletSelect}
+      />
     </div>
   );
 };

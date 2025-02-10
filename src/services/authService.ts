@@ -1,31 +1,11 @@
+// services/authService.ts
 import api from './api';
+import { SignUpForm, AuthResponse } from '../types/auth';
 
 interface GoogleUserPayload {
   email: string;
   name: string;
   picture?: string;
-}
-
-interface SignUpData {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
-}
-
-interface SignInData {
-  email: string;
-  password: string;
-}
-
-interface WalletSignUpData {
-  walletAddress: string;
-  name: string;
-  role: string;
-}
-
-interface WalletSignInData {
-  walletAddress: string;
 }
 
 export class AuthService {
@@ -62,76 +42,50 @@ export class AuthService {
     }
   }
 
-  static async googleSignUp(token: string, role: string) {
-    const response = await api.post('/auth/google/signup', { token, role });
+  static async googleSignUp(token: string, role: SignUpForm['role']): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/google/signup', { token, role });
     return response.data;
   }
 
-  static async googleSignIn(token: string) {
-    const response = await api.post('/auth/google/signin', { token });
-    return response.data;
-  }
-
-  // Email Auth Methods
-  static async emailSignUp(data: SignUpData) {
-    const response = await api.post('/auth/signup', data);
+  static async googleSignIn(token: string): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/google/signin', { token });
     return response.data;
   }
 
   // Email Auth Methods
-  static async emailSignIn(data: SignInData) {
+  static async emailSignUp(data: Pick<SignUpForm, 'name' | 'email' | 'password' | 'role'>): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/signup', data);
+    return response.data;
+  }
+
+  static async emailSignIn(data: Pick<SignUpForm, 'email' | 'password'>): Promise<AuthResponse> {
     try {
-      console.log('Making sign in request with:', { email: data.email });
-      
-      const response = await api.post('/auth/signin', data);
-      console.log('Raw sign in response:', response);
+      const response = await api.post<AuthResponse>('/auth/signin', data);
 
-      // Check for proper response structure
-      if (response.data?.status !== 'success' || !response.data?.data) {
-        console.error('Invalid response structure:', response.data);
+      if (response.data.status !== 'success' || !response.data.data) {
         throw new Error('Invalid response from server');
       }
 
-      const { token, user } = response.data.data;
-
-      if (!token || !user) {
-        console.error('Missing token or user in response:', response.data);
-        throw new Error('Invalid response data');
-      }
-
-      // Store the token in axios default headers
+      const { token } = response.data.data;
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      return {
-        data: {
-          token,
-          user
-        }
-      };
+      return response.data;
     } catch (error: any) {
-      console.error('Full error object:', error);
-      
       if (error.response) {
-        console.error('Error response:', error.response);
         throw new Error(error.response.data?.message || 'Authentication failed');
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        throw new Error('No response from server. Please check your connection.');
-      } else {
-        console.error('Request setup error:', error);
-        throw new Error('Failed to make authentication request');
       }
+      throw error;
     }
   }
 
   // Wallet Auth Methods
-  static async walletSignUp(data: WalletSignUpData) {
-    const response = await api.post('/auth/wallet/signup', data);
+  static async walletSignUp(data: Pick<SignUpForm, 'walletAddress' | 'name' | 'role'>): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/wallet/signup', data);
     return response.data;
   }
 
-  static async walletSignIn(data: WalletSignInData) {
-    const response = await api.post('/auth/wallet/signin', data);
+  static async walletSignIn(data: Pick<SignUpForm, 'walletAddress'>): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/wallet/signin', data);
     return response.data;
   }
 }

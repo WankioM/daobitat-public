@@ -7,7 +7,7 @@ import type { RecaptchaVerifier } from 'firebase/auth';
 
 interface PhoneSignUpProps {
   form: SignUpForm;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
   handlePhoneSignUp: () => Promise<void>;
 }
 
@@ -15,6 +15,7 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [recaptchaVerifier, setRecaptchaVerifier] = useState<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
@@ -30,16 +31,23 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
 
   const handleSendOTP = async () => {
     try {
+      if (!form.phone?.trim()) {
+        setError('Please enter a valid phone number');
+        return;
+      }
+
       setLoading(true);
+      setError(null);
+      
       if (!recaptchaVerifier) {
         throw new Error('Recaptcha not initialized');
       }
       
-      await phoneAuthService.sendOTP(form.phone, recaptchaVerifier);
+      await phoneAuthService.sendOTP(form.phone.trim(), recaptchaVerifier);
       setOtpSent(true);
     } catch (error) {
       console.error('Error sending OTP:', error);
-      // Handle error (show toast/alert)
+      setError(error instanceof Error ? error.message : 'Failed to send verification code');
     } finally {
       setLoading(false);
     }
@@ -47,9 +55,26 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
 
   const handleVerifyOTP = async () => {
     try {
+      if (!form.phone?.trim()) {
+        setError('Phone number is required');
+        return;
+      }
+
+      if (!otp.trim()) {
+        setError('Please enter the verification code');
+        return;
+      }
+
+      if (!form.name || !form.role) {
+        setError('Name and role are required');
+        return;
+      }
+
       setLoading(true);
+      setError(null);
+
       const response = await phoneAuthService.verifyOTPAndSignUp(
-        otp,
+        otp.trim(),
         form.name,
         form.role
       );
@@ -60,7 +85,7 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
       // Redirect or update UI state
     } catch (error) {
       console.error('Error verifying OTP:', error);
-      // Handle error (show toast/alert)
+      setError(error instanceof Error ? error.message : 'Failed to verify code');
     } finally {
       setLoading(false);
     }
@@ -74,7 +99,7 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
         <input
           type="tel"
           name="phone"
-          value={form.phone}
+          value={form.phone || ''}
           onChange={handleChange}
           disabled={otpSent}
           className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-11
@@ -84,6 +109,12 @@ const PhoneSignUp: React.FC<PhoneSignUpProps> = ({ form, handleChange }) => {
           required
         />
       </div>
+      
+      {error && (
+        <div className="mt-2 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
       
       {otpSent && (
         <div className="mt-4">
