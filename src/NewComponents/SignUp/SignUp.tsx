@@ -38,10 +38,21 @@ const SignUp = () => {
       setIsLoading(true);
       setError(null);
 
-      if (!form.name || !form.email || !form.password || !form.role) {
+      if (!form.name || !form.email || !form.password) {
         setError('Please fill in all required fields');
         return;
       }
+
+      if (!form.role) {
+        setError('Please select your role');
+        return;
+      }
+
+      console.log('Attempting email signup with data:', { 
+        name: form.name, 
+        email: form.email, 
+        role: form.role 
+      });
 
       const response = await api.post('/auth/email/signup', {
         name: form.name,
@@ -50,6 +61,8 @@ const SignUp = () => {
         role: form.role
       });
 
+      console.log('Signup response received:', response.data);
+
       if (response.data?.data?.token) {
         localStorage.setItem('token', response.data.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.data.user));
@@ -57,6 +70,7 @@ const SignUp = () => {
         navigate('/');
       }
     } catch (err: any) {
+      console.error('Detailed signup error:', err);
       setError(err.response?.data?.message || 'Failed to sign up');
     } finally {
       setIsLoading(false);
@@ -65,43 +79,60 @@ const SignUp = () => {
 
   const handleWalletSelect = async (walletId: string) => {
     try {
+      console.log('Starting wallet connection process for:', walletId);
       setIsLoading(true);
       setError(null);
+
+      if (!form.role) {
+        setError('Please select your role before connecting wallet');
+        setIsLoading(false);
+        return;
+      }
 
       let walletAddress: WalletAddress | undefined;
 
       switch (walletId) {
         case 'metamask':
+          console.log('Attempting to connect MetaMask...');
           if (!window.ethereum) {
             setError('Please install MetaMask to continue');
             return;
           }
+          console.log('Requesting MetaMask accounts...');
           const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
           });
+          console.log('MetaMask accounts received:', accounts);
           walletAddress = accounts[0] as WalletAddress;
           break;
           
         case 'rainbow':
+          console.log('Rainbow wallet connection attempted');
           setError('Rainbow wallet integration coming soon');
           return;
           
         case 'braavos':
+          console.log('Attempting to connect Braavos...');
           if (!window.starknet) {
             setError('Please install Braavos wallet to continue');
             return;
           }
+          console.log('Enabling Braavos wallet...');
           await window.starknet.enable();
           walletAddress = window.starknet.selectedAddress as WalletAddress;
+          console.log('Braavos wallet address:', walletAddress);
           break;
           
         case 'argent':
+          console.log('Attempting to connect Argent X...');
           if (!window.starknet) {
             setError('Please install Argent X wallet to continue');
             return;
           }
+          console.log('Enabling Argent X wallet...');
           await window.starknet.enable();
           walletAddress = window.starknet.selectedAddress as WalletAddress;
+          console.log('Argent X wallet address:', walletAddress);
           break;
           
         default:
@@ -113,9 +144,60 @@ const SignUp = () => {
         throw new Error('Failed to get wallet address');
       }
 
-      setForm(prev => ({ ...prev, walletAddress }));
+      console.log('Setting wallet address in form:', walletAddress);
+      
+      // Create the updated form data
+      const updatedForm = {
+        ...form,
+        walletAddress
+      };
+      
+      // Update the form state
+      setForm(updatedForm);
       setShowWalletModal(false);
       setActiveMethod('wallet');
+
+      // Use the updated data directly instead of relying on state
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        console.log('Attempting wallet signup with:', {
+          walletAddress: updatedForm.walletAddress,
+          name: updatedForm.name || '',
+          role: updatedForm.role
+        });
+
+        const response = await api.post('/auth/wallet/signup', {
+          walletAddress: updatedForm.walletAddress,
+          name: updatedForm.name || '',
+          role: updatedForm.role
+        });
+
+        console.log('Signup response:', response.data);
+
+        if (!response.data?.data?.token || !response.data?.data?.user) {
+          throw new Error('Invalid response from server');
+        }
+
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+        setUser(response.data.data.user);
+        
+        // Navigate based on role
+        if (updatedForm.role === 'lister') {
+          navigate('/listerdashboard');
+        } else if (updatedForm.role === 'agent') {
+          navigate('/agentdashboard');
+        } else if (updatedForm.role === 'buyer') {
+          navigate('/buyerdashboard');
+        } else {
+          navigate('/');
+        }
+      } catch (err: any) {
+        console.error('Wallet signup error:', err);
+        setError(err.response?.data?.message || 'Failed to sign up with wallet');
+      }
 
     } catch (err: any) {
       console.error('Wallet connection error:', err);
@@ -131,26 +213,51 @@ const SignUp = () => {
 
   const handleWalletSignUp = async () => {
     try {
-      if (!form.walletAddress || !form.name || !form.role) {
-        setError('Wallet address, username, and role are required');
+      if (!form.walletAddress || !form.role) {
+        setError('Wallet address and role are required');
         return;
       }
 
       setIsLoading(true);
       setError(null);
 
-      const response = await api.post('/auth/wallet/signup', {
+      console.log('Attempting wallet signup with:', {
         walletAddress: form.walletAddress,
-        name: form.name,
+        name: form.name || '',  
         role: form.role
       });
+
+      const response = await api.post('/auth/wallet/signup', {
+        walletAddress: form.walletAddress,
+        name: form.name || '',  
+        role: form.role
+      });
+
+      console.log('Signup response:', response.data);
+
+      if (!response.data?.data?.token || !response.data?.data?.user) {
+        throw new Error('Invalid response from server');
+      }
 
       localStorage.setItem('token', response.data.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
       setUser(response.data.data.user);
       
-      navigate('/');
+      // Show success message
+      setError(null);
+      
+      // Navigate based on role
+      if (form.role === 'lister') {
+        navigate('/listerdashboard');
+      } else if (form.role === 'agent') {
+        navigate('/agentdashboard');
+      } else if (form.role === 'buyer') {
+        navigate('/buyerdashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err: any) {
+      console.error('Wallet signup error:', err);
       setError(err.response?.data?.message || 'Failed to sign up with wallet');
     } finally {
       setIsLoading(false);
@@ -309,7 +416,7 @@ const SignUp = () => {
             <p className="text-center text-gray-600">
               Already have an account?{' '}
               <button
-                onClick={() => navigate('/signin')}
+                onClick={() => navigate('/login')}
                 className="text-[#24191E] hover:underline"
               >
                 Sign in

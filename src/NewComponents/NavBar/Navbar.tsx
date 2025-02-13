@@ -11,7 +11,8 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaHeart
+  FaHeart,
+  FaFileContract
 } from 'react-icons/fa';
 
 interface NavBarProps {
@@ -32,6 +33,7 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
     { id: 'Wishlist', label: 'Wishlist', icon: <FaHeart size={20} /> },
     { id: 'Billings', label: 'Billing', icon: <FaCreditCard size={20} /> },
     { id: 'Financing', label: 'Financing', icon: <FaChartLine size={20} /> },
+    { id: 'ActiveLeases', label: 'Active Leases', icon: <FaFileContract size={20} /> },
   ];
 
   const handleSignOut = () => {
@@ -50,12 +52,12 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
       </button>
 
       {/* Sidebar */}
-      <div className={`
+      <div className={`bg-milk
         fixed lg:static inset-y-0 left-0 z-40 w-64 transform 
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 transition-transform duration-300 ease-in-out
       `}>
-        <div className="flex flex-col h-full bg-[#24191E] text-white">
+        <div className="flex flex-col h-full bg-graphite text-white">
           {/* User Profile Section */}
           <div className="p-6 border-b border-gray-700">
             <div className="flex items-center space-x-4">

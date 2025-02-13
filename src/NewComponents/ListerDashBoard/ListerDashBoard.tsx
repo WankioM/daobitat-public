@@ -8,8 +8,9 @@ import Billings from '../ListerDashBoard/Billings/Billings';
 import Messages from '../Messages/Messages';
 import Financing from '../ListerDashBoard/FinancingDashboard/Financing';
 import WishList from './WishList/WishList';
+import LeaseManagement from '../PaymentFlow/Lease/LeaseManagement';
 
-export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'Financing';
+export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'Financing' | 'ActiveLeases';
 
 const ListerDashboard: React.FC = () => {
   const location = useLocation();
@@ -18,14 +19,12 @@ const ListerDashboard: React.FC = () => {
   const { user } = useUser();
 
   useEffect(() => {
-    // Check for active tab in location state
     const state = location.state as { activeTab?: TabType } | null;
     if (state?.activeTab) {
       setActiveTab(state.activeTab);
     }
   }, [location]);
 
-  // Only check if user is logged in, not their role
   useEffect(() => {
     if (!user) {
       navigate('/login');
@@ -50,6 +49,8 @@ const ListerDashboard: React.FC = () => {
         return <Billings />;
       case 'Financing':
         return <Financing />;
+      case 'ActiveLeases':
+        return <LeaseManagement />;
       default:
         return <Properties />;
     }
@@ -58,15 +59,16 @@ const ListerDashboard: React.FC = () => {
   if (!user) return <div>Loading...</div>;
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <NavBar activeTab={activeTab} setActiveTab={handleTabChange} />
+    <div className="flex min-h-screen bg-milk">
+      {/* Sidebar */}
+      <div className="w-64 min-h-screen bg-graphite">
+        <NavBar activeTab={activeTab} setActiveTab={handleTabChange} />
+      </div>
       
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-8">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
-          </div>
+      {/* Main Content Area */}
+      <div className="flex-1 p-8">
+        <div className="max-w-7xl mx-auto">
+          {renderContent()}
         </div>
       </div>
     </div>

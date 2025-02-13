@@ -160,17 +160,33 @@ const SignIn = () => {
                   </span>
                 </div>
 
-                <motion.button
-                 onClick={handleSignIn}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                  className="w-full bg-[#24191E] text-white rounded-xl 
-                           p-4 flex items-center justify-center gap-2 transition-colors
-                           font-helvetica-regular hover:bg-opacity-90"
-                >
-                  Sign In
-                  <FaLongArrowAltRight />
-                </motion.button>
+                <div className="space-y-6">
+                  <motion.button
+                    onClick={handleSignIn}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    disabled={isLoading}
+                    className="w-full bg-[#24191E] text-white rounded-xl py-4 font-helvetica-medium text-base sm:text-lg flex items-center justify-center space-x-2 hover:bg-opacity-90 transition-all duration-200"
+                  >
+                    {isLoading ? (
+                      'Signing in...'
+                    ) : (
+                      <>
+                        <span>Sign in</span>
+                        <FaLongArrowAltRight />
+                      </>
+                    )}
+                  </motion.button>
+
+                  <div className="text-center">
+                    <p className="font-helvetica-light text-gray-500">
+                      Don't have an account?{' '}
+                      <a href="/signup" className="text-[#24191E] font-helvetica-medium hover:underline">
+                        Sign up
+                      </a>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 

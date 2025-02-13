@@ -21,10 +21,11 @@ export const Header = () => {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-4
-                    bg-[#231A1F]/70 border-b-2 border-white/10">
-      <Link to="/" className="text-2xl font-brown-sugar text-[#B7e3cc] cursor-pointer
+                    bg-gradient-to-b from-graphite to-graphite/80 border-b border-lightstone/10
+                    backdrop-blur-sm">
+      <Link to="/" className="text-2xl font-brown-sugar text-desertclay cursor-pointer
                     transition-transform duration-300 hover:scale-105
-                    drop-shadow-[2px_2px_4px_rgba(0,0,0,0.5)]">
+                    drop-shadow-[2px_2px_4px_rgba(0,0,0,0.3)]">
         DAOBITAT
       </Link>
 
@@ -32,9 +33,9 @@ export const Header = () => {
         {navItems.map(item => (
           <div
             key={item}
-            className="text-white font-helvetica hover:text-[#B7e3cc] cursor-pointer
+            className="text-milk font-helvetica hover:text-desertclay cursor-pointer
                      relative after:content-[''] after:absolute after:w-0 after:h-0.5
-                     after:bg-[#B7e3cc] after:left-1/2 after:-bottom-1.5
+                     after:bg-desertclay after:left-1/2 after:-bottom-1.5
                      after:transition-all after:duration-300
                      hover:after:w-full hover:after:left-0"
           >
@@ -47,17 +48,18 @@ export const Header = () => {
         {!user ? (
           <Link
             to="/login"
-            className="px-4 py-2 border border-[#B7e3cc] rounded-full text-white
-                     transition-all duration-300 hover:bg-[#B7e3cc] hover:text-black"
+            className="px-4 py-2 border border-desertclay rounded-full text-milk
+                     transition-all duration-300 hover:bg-desertclay hover:text-milk
+                     hover:shadow-lg hover:shadow-desertclay/20"
           >
             Sign In
           </Link>
         ) : (
           <div
             onClick={handleUsernameClick}
-            className="px-4 py-2 border border-[#B7e3cc] rounded-full text-white
-                     transition-all duration-300 hover:bg-[#B7e3cc] hover:text-black
-                     cursor-pointer"
+            className="px-4 py-2 border border-desertclay rounded-full text-milk
+                     transition-all duration-300 hover:bg-desertclay hover:text-milk
+                     hover:shadow-lg hover:shadow-desertclay/20 cursor-pointer"
           >
             Hi, {user.name}
           </div>

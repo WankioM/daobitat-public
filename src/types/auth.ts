@@ -1,5 +1,5 @@
 // src/types/auth.ts
-export type UserRole = 'lister' | 'agent' | 'buyer' | 'renter';
+export type UserRole = 'lister' | 'renter' | 'agent' | 'buyer';
 export type WalletAddress = `0x${string}` | string;
 
 export interface BaseUser {

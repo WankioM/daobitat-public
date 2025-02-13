@@ -4,15 +4,7 @@ import { WalletType } from './Wallets/walletTypes';
 import { ArgentConfig } from './Wallets/config/ArgentConfig';
 import { BraavosConfig } from './Wallets/config/BraavosConfig';
 import { getWalletConfig } from './Wallets/config';
-
-import type { StarknetWindowObject } from 'get-starknet-core';
-
-declare global {
-  interface Window {
-    ethereum: any;
-    starknet?: StarknetWindowObject;
-  }
-}
+import type { EthereumProvider } from '../../../types/payment';
 
 interface ChooseWalletProps {
   onWalletSelect: (walletType: WalletType) => Promise<void>;
@@ -84,7 +76,6 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
         case 'metamask':
           return typeof window.ethereum !== 'undefined';
         case 'braavos':
-          // Improved Braavos detection without using wallets array
           console.log('Checking Braavos:', {
             starknetExists: !!window.starknet,
             providerName: window.starknet?.provider?.name,
@@ -92,15 +83,11 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
           });
           
           return !!window.starknet && (
-            // Check provider name (case insensitive)
             window.starknet.provider?.name?.toLowerCase().includes('braavos') ||
-            // Check wallet ID (case insensitive)
             window.starknet.id?.toLowerCase().includes('braavos') ||
-            // Check if browser has Braavos
             typeof window.starknet_braavos !== 'undefined'
           );
         case 'argent':
-          // Enhanced Argent detection
           return !!window.starknet && (
             window.starknet.provider?.name?.toLowerCase().includes('argentx') ||
             window.starknet.id?.toLowerCase() === 'argentx'
@@ -113,6 +100,8 @@ const ChooseWallet: React.FC<ChooseWalletProps> = ({
       return false;
     }
   };
+
+  // Rest of the component remains the same...
 
   return (
     <div 
