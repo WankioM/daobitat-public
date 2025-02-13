@@ -163,7 +163,61 @@ export const propertyService = {
   },
 
   getPropertyById: async (propertyId: string) => {
-    const response = await api.get(`/api/properties/${propertyId}`);
-    return response.data;
+    return api.get(`/api/properties/${propertyId}`);
+  },
+
+  searchProperties: async (searchParams: {
+    location?: string;
+    category?: string;
+    budget?: string;
+    paymentMode?: string;
+    propertyType?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    // Add search parameters to query string
+    if (searchParams.location) queryParams.append('location', searchParams.location);
+    if (searchParams.category) queryParams.append('category', searchParams.category);
+    if (searchParams.budget) queryParams.append('budget', searchParams.budget);
+    if (searchParams.paymentMode) queryParams.append('paymentMode', searchParams.paymentMode);
+    if (searchParams.propertyType) queryParams.append('propertyType', searchParams.propertyType);
+    if (searchParams.page) queryParams.append('page', searchParams.page.toString());
+    if (searchParams.limit) queryParams.append('limit', searchParams.limit.toString());
+
+    return api.get(`/api/properties/search?${queryParams.toString()}`);
+  },
+
+  advancedSearch: async (searchParams: {
+    location?: string;
+    category?: string;
+    budget?: string;
+    paymentMode?: string;
+    propertyType?: string;
+    amenities?: string[];
+    minBedrooms?: number;
+    maxBedrooms?: number;
+    minBathrooms?: number;
+    maxBathrooms?: number;
+    minArea?: number;
+    maxArea?: number;
+    page?: number;
+    limit?: number;
+  }) => {
+    const queryParams = new URLSearchParams();
+    
+    // Add all search parameters to query string
+    Object.entries(searchParams).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (Array.isArray(value)) {
+          value.forEach(v => queryParams.append(key, v));
+        } else {
+          queryParams.append(key, value.toString());
+        }
+      }
+    });
+
+    return api.get(`/api/properties/advanced-search?${queryParams.toString()}`);
   }
 };

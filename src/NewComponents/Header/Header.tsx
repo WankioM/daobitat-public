@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useOptionalUser } from '../../hooks/useOptionalUser';
+import LogoImage from '../../Assets/dbdb2.png';
 
 const navItems = ['Buy', 'Rent', 'Sell', 'Advertise', 'Financing', 'About'];
 
@@ -23,10 +24,13 @@ export const Header = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center px-8 py-4
                     bg-gradient-to-b from-graphite to-graphite/80 border-b border-lightstone/10
                     backdrop-blur-sm">
-      <Link to="/" className="text-2xl font-brown-sugar text-desertclay cursor-pointer
-                    transition-transform duration-300 hover:scale-105
-                    drop-shadow-[2px_2px_4px_rgba(0,0,0,0.3)]">
-        DAOBITAT
+      <Link to="/" className="flex items-center gap-2 cursor-pointer
+                    transition-transform duration-300 hover:scale-105">
+        <img 
+          src={LogoImage} 
+          alt="DaoBitat Logo" 
+          className="h-10 w-auto"
+        />
       </Link>
 
       <div className="hidden md:flex gap-8">

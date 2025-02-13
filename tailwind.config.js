@@ -12,7 +12,7 @@ module.exports = {
         'red': '#FF0000',
         'green': '#00FF00',
         'milk': '#F9F7FO',
-        'lightstone': '#BDD2C2',
+        'lightstone': '#DBD2C2',
         'desertclay': '#B17457',
         'graphite': '#4A4947'
       },

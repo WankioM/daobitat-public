@@ -41,12 +41,12 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-graphite">
+    <div className="flex flex-col min-h-screen ">
       {/* Header */}
       <Header />
 
       {/* Hero Section - Takes up 2/3 of viewport height */}
-      <div className="relative h-[calc(67vh)] mt-20">
+      <div className="relative h-[calc(67vh)] ">
         {/* Main Image */}
         <div className="relative w-full h-full">
           <img 
@@ -93,7 +93,7 @@ export const LandingPage = () => {
         </div>
 
         {/* Search Box */}
-        <div className="container mx-auto px-4">
+        <div className=" w-full bg-lightstone">
           <SearchBox />
         </div>
 
