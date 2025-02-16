@@ -13,7 +13,7 @@ import Billings from './NewComponents/ListerDashBoard/Billings/Billings';
 import Map from './NewComponents/Maps/Map';
 import ContactPage from './NewComponents/Contact/ContactUs';
 import PropertyTab from './NewComponents/Recommendations/PropertyTab/PropertyTab';
-
+import AboutUs from './NewComponents/AboutUs/AboutUs';
 
 const App: React.FC = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -33,6 +33,7 @@ const App: React.FC = () => {
             <Route path="/map" element={<Map />} />
             <Route path="/contactus" element={<ContactPage />} />
             <Route path="/property/:id" element={<PropertyTab />} />
+            <Route path="/about" element={<AboutUs />} />
             
             {/* Auth routes */}
             <Route path="/login" element={<SignIn />} />

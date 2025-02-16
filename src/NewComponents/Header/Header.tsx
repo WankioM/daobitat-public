@@ -35,16 +35,30 @@ export const Header = () => {
 
       <div className="hidden md:flex gap-8">
         {navItems.map(item => (
-          <div
-            key={item}
-            className="text-milk font-helvetica hover:text-desertclay cursor-pointer
-                     relative after:content-[''] after:absolute after:w-0 after:h-0.5
-                     after:bg-desertclay after:left-1/2 after:-bottom-1.5
-                     after:transition-all after:duration-300
-                     hover:after:w-full hover:after:left-0"
-          >
-            {item}
-          </div>
+          item === 'About' ? (
+            <Link to="/about" key={item}>
+              <div
+                className="text-milk font-helvetica hover:text-desertclay cursor-pointer
+                         relative after:content-[''] after:absolute after:w-0 after:h-0.5
+                         after:bg-desertclay after:left-1/2 after:-bottom-1.5
+                         after:transition-all after:duration-300
+                         hover:after:w-full hover:after:left-0"
+              >
+                {item}
+              </div>
+            </Link>
+          ) : (
+            <div
+              key={item}
+              className="text-milk font-helvetica hover:text-desertclay cursor-pointer
+                       relative after:content-[''] after:absolute after:w-0 after:h-0.5
+                       after:bg-desertclay after:left-1/2 after:-bottom-1.5
+                       after:transition-all after:duration-300
+                       hover:after:w-full hover:after:left-0"
+            >
+              {item}
+            </div>
+          )
         ))}
       </div>
 
