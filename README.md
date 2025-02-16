@@ -13,8 +13,61 @@ This project is split across three repositories:
    - Backend repository (temporarily public)
    - Contains API endpoints, database management, and server-side logic
 
-3. **Smart Contracts**: [daobitat-starknet-contract](https://github.com/WankioM/daobitat-starknet-contract)
-   - StarkNet smart contracts for property management and transactions
+3. **Smart Contracts**:
+Our platform leverages various smart contracts to ensure secure, automated, and transparent processes for property rentals and transactions. Below are the key contracts and their functions:
+
+Property Registry Contract
+The Property Registry Contract handles all aspects of property listings and ownership records, ensuring the integrity and verification of property details on the blockchain.
+
+Key Features:
+
+Manages property listings and ownership records
+Stores property metadata and verification status
+Key Functions:
+
+registerProperty(): Registers a new property listing.
+updateListing(): Updates existing property details.
+verifyProperty(): Verifies the ownership and legitimacy of the property.
+Escrow Contract
+The Escrow Contract ensures that rent payments and security deposits are held securely, with funds released only when conditions are met, providing protection to both landlords and tenants.
+
+Key Features:
+
+Manages security deposits and rent payments
+Holds funds in escrow until the agreed-upon conditions are met
+Handles automated rent disbursement
+Key Functions:
+
+depositRent(): Deposits rent payments into the escrow account.
+releaseFunds(): Releases funds to the property owner when conditions are satisfied.
+refundDeposit(): Refunds the security deposit if lease terms are met or the agreement is terminated.
+Tenancy Agreement Contract
+The Tenancy Agreement Contract automates the creation, signing, and management of rental agreements, ensuring both landlords and tenants are bound by the terms of the contract.
+
+Key Features:
+
+Manages rental agreements and terms
+Stores tenant history and payment records
+Handles lease signing and renewals
+Key Functions:
+
+createAgreement(): Creates a new tenancy agreement between the tenant and landlord.
+signLease(): Allows both parties to digitally sign the lease agreement.
+terminateLease(): Terminates a lease agreement, releasing the tenant from obligations.
+Access Control Contract
+The Access Control Contract is designed to manage user roles, ensuring that only authorized individuals can perform certain actions. It handles identity verification and permission assignments.
+
+Key Features:
+
+Manages user roles (admin, property owner, tenant)
+Handles identity verification
+Controls permissions for various operations
+Key Functions:
+
+verifyIdentity(): Verifies the identity of users, ensuring they are who they claim to be.
+assignRole(): Assigns roles such as admin, property owner, or tenant to users.
+checkPermission(): Checks if a user has the necessary permissions to perform a specific operation.
+These smart contracts enable a seamless, secure, and transparent experience for both property owners and tenants, leveraging blockchain technology for trustless transactions and automated processes.
 
 DAO-Bitat is a decentralized property listing platform that revolutionizes real estate investing through blockchain technology. Our platform brings transparency, accessibility, and democratization to real estate investments by enabling fractional ownership of Real World Assets (RWA).
 
