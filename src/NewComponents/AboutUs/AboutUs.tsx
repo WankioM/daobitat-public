@@ -35,27 +35,27 @@ export default function AboutUs() {
   const steps = [
     {
       title: "Sign Up & Log In",
-      description: "Create an account quickly and securely via email, with the option for easy logins using account abstraction. Once registered, you can securely manage your property listings or rental inquiries.",
+      description: "Easily create a crypto enabled account hasle free.",
     },
     {
       title: "Browse Verified Properties",
-      description: "Explore a wide range of properties with confidence. All listings are verified on the blockchain, ensuring that the details are accurate and trustworthy. Each property includes clear images, videos, and verified ownership information.",
+      description: "Only Trusted properties displayed for you to see.",
     },
     {
       title: "Make an Offer & Enter Agreement",
-      description: "When you find the right property, submit an offer to the landlord or property owner. Once terms are agreed upon, both parties enter into a smart contract that outlines the lease or sale conditions, ensuring full transparency and mutual trust.",
+      description: "Securely make the lease agreement official",
     },
     {
       title: "Process Payment Through Escrow",
-      description: "Your payment is securely processed via Daobitat’s blockchain-powered escrow system. The deposit and first month’s rent are held in escrow until all contract terms are met, ensuring that both parties are protected throughout the transaction.",
+      description: "Ensures you have peace of mind as you wait for your transaction to be completed",
     },
     {
       title: "Move In Securely",
-      description: "After the contract conditions are fulfilled, the transaction is finalized, and the first month’s rent is released to the property owner. Renters can move in knowing that their deposit and payments are secure, and property owners can be assured of timely payment.",
+      description: "All boxes ticked, you can now take ownership of your new home.",
     },
     {
       title: "Ongoing Support & Property Management",
-      description: "Daobitat provides ongoing tools for property management. Owners can track payments, view tenant history, and manage multiple listings, while renters enjoy a safe and streamlined experience throughout their tenancy.",
+      description: "Easily have any additional services on your home managed onlinegit git .",
     },
   ]
 
@@ -85,7 +85,7 @@ export default function AboutUs() {
   return (
     <div className="container mx-auto px-4 py-8">
       <section className="mb-16 text-center">
-        <h1 className="text-4xl font-bold mb-4 text-[#b17457]">Aboutgit  Daobitat</h1>
+        <h1 className="text-4xl font-bold mb-4 text-[#b17457]">About  Daobitat</h1>
         <p className="text-xl text-[#4a4947]">
           DaoBitat is a decentralized property listing platform with verified onchain listings, and an escrow payment system to safeguard real estate transactions. Our Blockchain-powered escrow ensures deposits are untouchable until conditions are met, while smart contracts automate trust in ownership and lease agreements.
         </p>
