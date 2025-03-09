@@ -1,267 +1,132 @@
-# DAO-Bitat Platform
+# DAO-Bitat: Revolutionizing Real Estate with Blockchain Technology
 
-![DAO-Bitat Banner](https://your-image-url.com/banner.png)
 
-## Project Repositories
 
-This project is split across three repositories:
+## 📝 Overview
 
-1. **Frontend (Current Repository)**: [daobitat-public](https://github.com/WankioM/daobitat-public)
-   - Main public repository containing the user interface and client-side logic
+DAO-Bitat is a decentralized property listing platform that transforms the real estate marketplace through blockchain technology. Our solution creates a secure, transparent, and efficient ecosystem for property transactions, addressing critical industry challenges while making property investment accessible to small investors through tokenization.
 
-2. **Backend**: [daobitat-backend](https://github.com/WankioM/daobitat-backend)
-   - Backend repository (temporarily public)
-   - Contains API endpoints, database management, and server-side logic
+## 🔗 Quick Links
 
-3. **Smart Contracts**:
-Our platform leverages various smart contracts to ensure secure, automated, and transparent processes for property rentals and transactions. Below are the key contracts and their functions:
+- **[Live Platform](https://daobitat.io)** - Test the working beta version
+- **[Documentation](https://www.canva.com/design/DAGg5X83YDw/n6FgbURM4zmzyQua9yt4AA/view)** - Comprehensive platform guide
+- **[Pitch Deck](https://www.canva.com/design/DAGdxONjAcA/jvq4OoHpdLeEehMs_jcZBA/view)** - Project presentation
+- **[Linktree](https://linktr.ee/daobitat)** - All resources in one place
+- **[GitHub Repository](https://github.com/WankioM/daobitat-public)** - Public frontend code
 
-Property Registry Contract
-The Property Registry Contract handles all aspects of property listings and ownership records, ensuring the integrity and verification of property details on the blockchain.
+## 🔍 The Problem
 
-Key Features:
+The real estate market, particularly in Kenya and across Africa, faces significant challenges:
 
-Manages property listings and ownership records
-Stores property metadata and verification status
-Key Functions:
+- **Rampant Fraud**: 1 in every 5 real estate transactions is fraudulent
+- **Time Inefficiency**: Acquiring a new home takes 2-5 months
+- **Price Inflation**: Purchase prices are 5.2% higher than necessary (Hass Consult 2023)
+- **Lack of Transparency**: Property owners struggle with visibility throughout transactions
+- **Trust Deficit**: Unreliable verification systems leave buyers and renters vulnerable
 
-registerProperty(): Registers a new property listing.
-updateListing(): Updates existing property details.
-verifyProperty(): Verifies the ownership and legitimacy of the property.
-Escrow Contract
-The Escrow Contract ensures that rent payments and security deposits are held securely, with funds released only when conditions are met, providing protection to both landlords and tenants.
+These problems create friction, increase costs, and undermine trust in the real estate market.
 
-Key Features:
+## 💡 Our Solution
 
-Manages security deposits and rent payments
-Holds funds in escrow until the agreed-upon conditions are met
-Handles automated rent disbursement
-Key Functions:
+DAO-Bitat provides a blockchain-powered platform connecting property seekers directly with verified owners and agents through:
 
-depositRent(): Deposits rent payments into the escrow account.
-releaseFunds(): Releases funds to the property owner when conditions are satisfied.
-refundDeposit(): Refunds the security deposit if lease terms are met or the agreement is terminated.
-Tenancy Agreement Contract
-The Tenancy Agreement Contract automates the creation, signing, and management of rental agreements, ensuring both landlords and tenants are bound by the terms of the contract.
+### Core Features
 
-Key Features:
+- **Verified Property Listings**: On-chain verification ensuring authenticity
+- **Secure Escrow System**: Blockchain-based protection for deposits and payments
+- **Smart Contract Management**: Automated agreements and transaction execution
+- **Property History Tracking**: Immutable record of property transactions
+- **Fractional Ownership**: Tokenization making property investment accessible
+- **Seamless User Experience**: Intuitive interface for all user knowledge levels
 
-Manages rental agreements and terms
-Stores tenant history and payment records
-Handles lease signing and renewals
-Key Functions:
+## 🏗️ Technical Architecture
 
-createAgreement(): Creates a new tenancy agreement between the tenant and landlord.
-signLease(): Allows both parties to digitally sign the lease agreement.
-terminateLease(): Terminates a lease agreement, releasing the tenant from obligations.
-Access Control Contract
-The Access Control Contract is designed to manage user roles, ensuring that only authorized individuals can perform certain actions. It handles identity verification and permission assignments.
+### Technology Stack
 
-Key Features:
+- **Frontend**: React with responsive design for all device sizes
+- **Backend**: MongoDB for flexible, scalable document storage
+- **Blockchain Integration**: Smart contracts for escrow and verification
+- **Cloud Infrastructure**: Google Cloud for reliable, secure hosting
+- **Mapping**: Google Maps API for precise property location visualization
 
-Manages user roles (admin, property owner, tenant)
-Handles identity verification
-Controls permissions for various operations
-Key Functions:
+### Data Model
 
-verifyIdentity(): Verifies the identity of users, ensuring they are who they claim to be.
-assignRole(): Assigns roles such as admin, property owner, or tenant to users.
-checkPermission(): Checks if a user has the necessary permissions to perform a specific operation.
-These smart contracts enable a seamless, secure, and transparent experience for both property owners and tenants, leveraging blockchain technology for trustless transactions and automated processes.
+Our platform utilizes four primary MongoDB collections:
+- **Properties**: Comprehensive property details and metrics
+- **Users**: User profiles with role-based permissions
+- **Messages**: Communication between users
+- **Offers**: Structured property offer details and status
 
-DAO-Bitat is a decentralized property listing platform that revolutionizes real estate investing through blockchain technology. Our platform brings transparency, accessibility, and democratization to real estate investments by enabling fractional ownership of Real World Assets (RWA).
+## ⛓️ Smart Contracts
 
-## 🌟 Features
+### Deployed Contracts
 
-### For Property Seekers
-- Secure property search and verification
-- Real-time messaging with property owners
-- Wallet integration (Braavos, Argent)
-- Property viewing scheduling
-- Smart contract-based agreements
-- Wishlist management
+1. **Property Verification Contract** (`0x46AEcA1b0804FbE7D8722E09E774AB163D4b0Da5`)
+   - Verifies real estate properties on the blockchain
+   - Maintains immutable ownership records
+   - Tracks property updates and transfers
+   - Enables trusted verification by approved addresses
+   - Functions include `registerProperty()`, `verifyProperty()`, `transferOwnership()`
 
-### For Property Owners
-- Tenant payment history verification
-- Multi-property management dashboard
-- Enhanced property visibility
-- Automated showing scheduling
-- Direct negotiation platform
-- Secure rent collection
+2. **Rental Escrow Contract** (`0x5942c3c250ddeaacd69d1ab7ccd81c261cf15204`)
+   - Secures rental transactions between landlords and tenants
+   - Manages security deposits and rent payments
+   - Handles dispute resolution through arbitration
+   - Implements automated payment schedules
+   - Functions include `createRentalEscrow()`, `fundEscrow()`, `payRent()`, `returnSecurityDeposit()`
 
-## 🏗 Architecture
+### Planned Contract Deployments
 
-### Frontend (React + TypeScript)
-- Google OAuth integration
-- Responsive dashboard interfaces
-- Real-time messaging system
-- Interactive property maps
-- Tailwind CSS styling
-- Context-based state management
+1. **Tenancy Agreement Contract**
+   - Manages digital rental agreements
+   - Automates lease signing and renewals
+   - Stores tenant history and payment records
+   - Key functions: `createAgreement()`, `signLease()`, `terminateLease()`
 
-### Backend (Node.js + Express)
-- JWT authentication
-- Role-based access control
-- MongoDB integration
-- Firebase Admin SDK
-- File upload handling
-- RESTful API endpoints
+2. **Access Control Contract**
+   - Manages user roles and permissions
+   - Handles identity verification
+   - Controls access to platform features
+   - Key functions: `verifyIdentity()`, `assignRole()`, `checkPermission()`
 
-### Blockchain Integration
-- StarkNet smart contracts
-- Property tokenization
-- Secure transactions
-- Ownership verification
-- Digital wallet integration (Braavos, Argent)
-## 🚀 Getting Started
+3. **Governance Contract**
+   - Enables decentralized decision-making
+   - Manages protocol upgrades
+   - Controls fee structures
+   - Key functions: `propose()`, `vote()`, `execute()`
 
-### Prerequisites
-- Node.js (v14+)
-- MongoDB
-- Firebase Account
-- Google OAuth Credentials
-- Stellar Account
+## 🚀 Market Strategy
 
-### Environment Variables
+Our go-to-market approach focuses on:
 
-```bash
-# Backend (.env)
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-GOOGLE_CLIENT_ID=your_google_client_id
-FIREBASE_ADMIN_KEY=path_to_firebase_key
+1. **Agent-First Approach**
+   - Targeting real estate agents as early adopters
+   - Building inventory through verified property listings
 
-# Frontend (.env)
-REACT_APP_GOOGLE_CLIENT_ID=your_google_client_id
-REACT_APP_API_URL=your_api_url
-```
+2. **Incentivization Programs**
+   - Referral campaigns for organic growth
+   - Rewards for property verification and transactions
 
-### Installation
+3. **Target Market**
+   - 20,000 monthly home seekers in Kenya
+   - Total Addressable Market: $21.92T (Africa Real Estate Market by 2029)
+   - Serviceable Obtainable Market: $41M (2% of Kenya's land and residential market)
 
-1. Clone the repository
-```bash
-git clone https://github.com/yourusername/daobitat.git
-cd daobitat
-```
+## 🛣️ Roadmap
 
-2. Install backend dependencies
-```bash
-cd backend
-npm install
-```
+- **Current Stage**: Development of prototype with first 100 listings
+- **Q2 2025**: Official platform launch
+- **Q3 2025**: Expansion to additional regions
+- **Future Development**:
+  - Enhanced property tokenization features
+  - Decentralized governance for property management
+  - Property-backed lending system integration
+  - Advanced collateral management protocols
 
-3. Install frontend dependencies
-```bash
-cd frontend
-npm install
-```
+## 💪 Unique Value Proposition
 
-4. Start the development servers
-```bash
-# Backend
-npm run dev
+DAO-Bitat is transforming real estate transactions by bringing blockchain security, transparency, and efficiency to everyday users. We're creating a trustworthy ecosystem where finding and securing a home is no longer plagued by fraud, delays, and inflated costs.
 
-# Frontend
-npm start
-```
+---
 
-## 📱 Key Components
-
-### Authentication System
-- Google OAuth integration
-- Digital wallet connection
-- JWT token management
-- Role-based access
-
-### Property Management
-- Property listing CRUD operations
-- Image upload and management
-- Search and filtering
-- Location mapping
-
-### Messaging System
-- Real-time chat functionality
-- Property inquiries
-- Viewing scheduling
-- Notification system
-
-### Transaction System
-- Smart contract integration
-- Payment processing
-- Escrow management
-- Transaction history
-
-## 🔒 Security Features
-
-- JWT middleware for protected routes
-- Refresh token rotation
-- Rate limiting
-- Request sanitization
-- CORS configuration
-- Helmet.js security headers
-- API key management
-
-## 💾 Database Design
-
-### MongoDB Collections
-- Users
-- Properties
-- Messages
-- Transactions
-- Bookings
-- Wishlists
-
-### Optimization
-- Connection pooling
-- Redis caching
-- Database indexing
-- Migration system
-
-## 🛠 Tech Stack
-
-### Frontend
-- React
-- TypeScript
-- Tailwind CSS
-- @react-oauth/google
-- React Router
-- Context API
-
-### Backend
-- Node.js
-- Express
-- MongoDB
-- Firebase Admin
-- JWT
-- Stellar SDK
-
-### DevOps
-- Docker
-- GitHub Actions
-- PM2
-- Winston Logger
-
-## 📚 API Documentation
-
-### Authentication Routes
-```typescript
-POST /auth/google    // Google OAuth
-POST /auth/wallet    // Wallet connection
-POST /auth/phone     // Phone verification
-```
-
-### Property Routes
-```typescript
-GET    /api/properties      // List properties
-POST   /api/properties      // Create property
-PUT    /api/properties/:id  // Update property
-DELETE /api/properties/:id  // Delete property
-```
-
-### User Routes
-```typescript
-GET    /users/profile      // Get user profile
-PUT    /users/profile      // Update profile
-DELETE /users/account      // Delete account
-```
-
+*DAO-Bitat - Democratizing Access to Real Estate Investment*
