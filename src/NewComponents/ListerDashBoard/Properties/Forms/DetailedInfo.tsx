@@ -143,7 +143,7 @@ export const DetailedInfo: React.FC<StepProps> = ({ formData, setFormData }) => 
 
     <div className="flex items-center space-x-4">
       <FaBed className="text-celadon text-xl" />
-      <span className="font-helvetica-light text-slategray">Step 3 of 4</span>
+      <span className="font-helvetica-light text-slategray">Step 4 of 5</span>
     </div>
   </motion.div>
 );

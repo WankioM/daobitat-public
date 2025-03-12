@@ -12,7 +12,10 @@ const api = axios.create({
 // Add a request interceptor to attach JWT token
 api.interceptors.request.use(
   (config) => {
+    // Check if token is being stored correctly
+
     const token = localStorage.getItem('token');
+    console.log('Token in localStorage:', token);
     console.log('Making request to:', config.url);
     console.log('Token present:', token ? 'Yes' : 'No');
     

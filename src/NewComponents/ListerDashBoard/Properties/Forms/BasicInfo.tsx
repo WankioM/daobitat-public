@@ -1,66 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FaHome } from 'react-icons/fa';
+import { FaHome, FaMapMarkedAlt } from 'react-icons/fa';
 import { NewPropertyFormData, StepProps } from '../propertyTypes';
-import PlacesAutocomplete, { Suggestion } from 'react-places-autocomplete';
 import { PROPERTY_TYPES, SPECIFIC_TYPES } from './propertyConstants';
 
-interface CustomSuggestion extends Suggestion {
-  active?: boolean;
-}
-
 export const BasicInfo: React.FC<StepProps> = ({ formData, setFormData }) => {
-  const handleLocationSelect = async (address: string) => {
-    try {
-      // Update location immediately for UI
-      setFormData(prev => ({
-        ...prev,
-        location: address
-      }));
-   
-      const geocoder = new window.google.maps.Geocoder();
-      const results = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-        geocoder.geocode({ address }, (results, status) => {
-          if (status === 'OK' && results?.[0]) {
-            resolve(results);
-          } else {
-            reject(new Error(`Geocoding failed: ${status}`));
-          }
-        });
-      });
-   
-      const location = results[0].geometry.location;
-      
-      setFormData(prev => ({
-        ...prev,
-        location: address,
-        streetAddress: results[0].formatted_address,
-        googleMapsURL: `https://www.google.com/maps?q=${location.lat()},${location.lng()}`,
-        coordinates: {
-          lat: location.lat(),
-          lng: location.lng()
-        }
-      }));
-   
-    } catch (error) {
-      console.error('Geocoding error:', error);
-      // Location already set even if geocoding fails
-    }
-   };
-   
-  const handleLocationChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      location: value,
-      streetAddress: '',
-      googleMapsURL: '',
-      coordinates: {
-        lat: 0,
-        lng: 0
-      }
-    }));
-  };
-
   return (
     <motion.div 
       className="space-y-4"
@@ -119,55 +63,42 @@ export const BasicInfo: React.FC<StepProps> = ({ formData, setFormData }) => {
       )}
 
       <div>
-        <label className="font-helvetica-regular text-slategray block mb-2">Street Address*</label>
+        <label className="font-helvetica-regular text-slategray block mb-2">Unit No. (if applicable)</label>
         <input
           type="text"
-          value={formData.streetAddress}
-          onChange={(e) => setFormData(prev => ({...prev, streetAddress: e.target.value}))}
+          value={formData.unitNo}
+          onChange={(e) => setFormData(prev => ({...prev, unitNo: e.target.value}))}
           className="w-full p-2 border border-gray-200 rounded-lg focus:border-celadon outline-none"
-          placeholder="Enter street address"
-          required
+          placeholder="E.g., Apt 4B, Unit 201"
         />
       </div>
 
-      <div>
-        <label className="font-helvetica-regular text-slategray block mb-2">Location</label>
-        <PlacesAutocomplete
-          value={formData.location}
-          onChange={handleLocationChange}
-          onSelect={handleLocationSelect}
-        >
-          {({ getInputProps, suggestions, getSuggestionItemProps, loading }) => (
-            <div className="relative w-full">
-            <input
-              {...getInputProps({
-                placeholder: 'Enter location',
-                className: 'w-full p-2 border border-gray-200 rounded-lg focus:border-celadon outline-none'
-              })}
-            />
-            <div className="absolute z-10 w-full bg-white shadow-lg max-h-60 overflow-auto break-words">
-              {loading && <div className="p-2">Loading...</div>}
-              {suggestions.map((suggestion) => {
-                const customSuggestion = suggestion as CustomSuggestion;
-                const className = customSuggestion.active
-                  ? 'p-2 hover:bg-gray-100 cursor-pointer bg-gray-100'
-                  : 'p-2 hover:bg-gray-100 cursor-pointer';
-                return (
-                  <div
-                    key={customSuggestion.placeId}
-                    {...getSuggestionItemProps(customSuggestion, {
-                      className,
-                    })}
-                  >
-                    <span>{customSuggestion.description}</span>
-                  </div>
-                );
-              })}
+      {formData.streetAddress ? (
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="flex items-start">
+            <FaMapMarkedAlt className="text-celadon mt-1 mr-2" />
+            <div>
+              <p className="font-helvetica-regular text-slategray">Initial Address:</p>
+              <p className="font-helvetica-light text-sm text-gray-600">{formData.streetAddress}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                You'll refine the exact location in the next step.
+              </p>
             </div>
-           </div>
-          )}
-        </PlacesAutocomplete>
-      </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 p-4 rounded-lg border border-dashed border-gray-300">
+          <div className="flex items-start">
+            <FaMapMarkedAlt className="text-celadon mt-1 mr-2" />
+            <div>
+              <p className="font-helvetica-regular text-slategray">Location Selection</p>
+              <p className="font-helvetica-light text-sm text-gray-600">
+                You'll select the property location in the next step.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center space-x-4">
         <FaHome className="text-celadon text-xl" />
