@@ -13,8 +13,8 @@ const Recommendations: React.FC<RecommendationsProps> = ({
   trendingProperties 
 }) => {
   return (
-    <div className="container mx-auto px-4 py-8">
-      <section className="mb-12">
+    <div className="container mx-auto ">
+      <section >
         
         <NewProperties properties={newProperties} />
       </section>

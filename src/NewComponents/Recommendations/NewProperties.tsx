@@ -11,10 +11,10 @@ interface NewPropertiesProps {
 
 const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [newProperties, setNewProperties] = useState<Property[]>([]);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
-  const itemsPerPage = isExpanded ? 6 : 3;
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const itemsPerPage = 3; // Show 3 properties at a time
 
   useEffect(() => {
     const fetchNewProperties = async () => {
@@ -33,107 +33,138 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
   }, []);
 
   const slideLeft = () => {
-    setCurrentIndex((prev) => Math.max(prev - itemsPerPage, 0));
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    if (currentIndex > 0) {
+      setCurrentIndex((prev) => prev - 1);
+    }
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
   };
 
   const slideRight = () => {
-    setCurrentIndex((prev) => 
-      Math.min(prev + itemsPerPage, Math.max(0, newProperties.length - itemsPerPage))
-    );
+    if (isTransitioning) return;
+    
+    setIsTransitioning(true);
+    if (currentIndex < newProperties.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+    }
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
   };
 
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-    setCurrentIndex(0);
-  };
-
-  const visibleProperties = newProperties.slice(currentIndex, currentIndex + itemsPerPage);
+  // No longer need the toggle expand function or visibleProperties
 
   return (
-    <div className="relative w-full px-16 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl ml-8 font-bold text-gray-800">Latest Properties</h2>
-        <button
-          onClick={toggleExpand}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
-          {isExpanded ? (
-            <>
-              <FaCompress size={20} />
-              <span>Collapse</span>
-            </>
-          ) : (
-            <>
-              <FaExpand size={20} />
-              <span>Expand</span>
-            </>
-          )}
-        </button>
-      </div>
-
-      <div className="relative px-12">
-        {/* Left Navigation Button */}
-        <button
-          onClick={slideLeft}
-          disabled={currentIndex === 0}
-          className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white shadow-lg mr-4 ${
-            currentIndex === 0 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-100'
-          }`}
-        >
-          <FaChevronLeft size={24} />
-        </button>
-
-        {/* Properties Grid */}
-        <div className="grid grid-cols-3 gap-8">
-          {visibleProperties.map((property) => (
-            <div key={property._id} className="w-full">
-              <HeroPropertyCard 
-                property={property}
-                onWishlistUpdate={async (propertyId: string) => {
-                  try {
-                    await propertyService.updateWishlist(propertyId, 'add');
-                  } catch (error) {
-                    console.error('Error updating wishlist:', error);
-                  }
-                }}
-                onClick={async (propertyId: string) => {
-                  try {
-                    await propertyService.incrementPropertyClicks(propertyId);
-                    setSelectedProperty(property);
-                  } catch (error) {
-                    console.error('Error incrementing clicks:', error);
-                  }
-                }}
-              />
-            </div>
-          ))}
+    <div className="relative w-full py-12 bg-milk">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header with subtle design touches */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="relative">
+            <h2 className="text-3xl font-florssolid text-graphite">Latest Properties</h2>
+            <div className="absolute -bottom-2 left-0 w-24 h-1 bg-rustyred rounded-full"></div>
+          </div>
+          
+          <div className="text-graphite font-medium">
+            <span>Scroll to explore</span>
+            <span className="ml-2 text-rustyred">→</span>
+          </div>
         </div>
 
-        {/* Right Navigation Button */}
-        <button
-          onClick={slideRight}
-          disabled={currentIndex >= newProperties.length - itemsPerPage}
-          className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full bg-white shadow-lg ml-4 ${
-            currentIndex >= newProperties.length - itemsPerPage 
-              ? 'opacity-50 cursor-not-allowed' 
-              : 'hover:bg-gray-100'
-          }`}
-        >
-          <FaChevronRight size={24} />
-        </button>
-      </div>
-
-      {/* Mobile Navigation Dots */}
-      <div className="flex justify-center gap-2 mt-4 md:hidden">
-        {Array.from({ length: Math.ceil(newProperties.length / itemsPerPage) }).map((_, idx) => (
+        {/* Properties carousel with improved navigation */}
+        <div className="relative">
+          {/* Left Navigation Button */}
           <button
-            key={idx}
-            onClick={() => setCurrentIndex(idx * itemsPerPage)}
-            className={`w-2 h-2 rounded-full ${
-              Math.floor(currentIndex / itemsPerPage) === idx ? 'bg-celadon' : 'bg-gray-300'
-            }`}
-          />
-        ))}
+            onClick={slideLeft}
+            disabled={currentIndex === 0 || isTransitioning}
+            className={`absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
+                      bg-white shadow-md border border-lightstone/30
+                      transition-all duration-300 focus:outline-none
+                      ${currentIndex === 0 ? 'opacity-40 cursor-not-allowed' : 
+                      'hover:bg-rustyred hover:text-white hover:border-rustyred'}`}
+            aria-label="Previous properties"
+          >
+            <FaChevronLeft size={20} />
+          </button>
+
+          {/* Properties Grid with smooth transition */}
+          <div className="overflow-hidden px-2">
+            <div 
+              className="flex transition-transform duration-500 ease-out"
+              style={{ 
+                transform: `translateX(-${currentIndex * (100 / itemsPerPage)}%)` 
+              }}
+            >
+              {newProperties.map((property) => (
+                <div 
+                  key={property._id} 
+                  className="transform transition-all duration-300 hover:translate-y-[-8px] w-full md:w-1/3 flex-shrink-0 px-3"
+                >
+                  <HeroPropertyCard 
+                    property={property}
+                    onWishlistUpdate={async (propertyId: string) => {
+                      try {
+                        await propertyService.updateWishlist(propertyId, 'add');
+                      } catch (error) {
+                        console.error('Error updating wishlist:', error);
+                      }
+                    }}
+                    onClick={async (propertyId: string) => {
+                      try {
+                        await propertyService.incrementPropertyClicks(propertyId);
+                        setSelectedProperty(property);
+                      } catch (error) {
+                        console.error('Error incrementing clicks:', error);
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right Navigation Button */}
+          <button
+            onClick={slideRight}
+            disabled={currentIndex >= newProperties.length - itemsPerPage || isTransitioning}
+            className={`absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
+                      bg-white shadow-md border border-lightstone/30
+                      transition-all duration-300 focus:outline-none
+                      ${currentIndex >= newProperties.length - itemsPerPage ? 
+                      'opacity-40 cursor-not-allowed' : 
+                      'hover:bg-rustyred hover:text-white hover:border-rustyred'}`}
+            aria-label="Next properties"
+          >
+            <FaChevronRight size={20} />
+          </button>
+        </div>
+
+        {/* Navigation Dots - Elegant indicator */}
+        <div className="flex justify-center gap-3 mt-8">
+          {Array.from({ length: Math.min(10, newProperties.length) }).map((_, idx) => {
+            const isActive = currentIndex === idx;
+            return (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={`transition-all duration-300 focus:outline-none ${
+                  isActive 
+                    ? 'w-8 h-2 bg-rustyred rounded-full' 
+                    : 'w-2 h-2 bg-lightstone rounded-full hover:bg-desertclay/50'
+                }`}
+                aria-label={`Go to property ${idx + 1}`}
+              />
+            );
+          })}
+          {newProperties.length > 10 && 
+            <span className="text-graphite self-center">...</span>
+          }
+        </div>
       </div>
 
       {/* Property Focus Modal */}

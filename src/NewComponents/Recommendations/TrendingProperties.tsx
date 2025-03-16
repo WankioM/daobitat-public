@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import React, { useEffect, useState, useRef } from 'react';
+import { FaChevronLeft, FaChevronRight, FaFire } from 'react-icons/fa';
 import { propertyService } from '../../services/propertyService';
 import HeroPropertyCard from './HeroPropertyCard';
 import HeroPropertyFocus from './HeroPropertyFocus';
@@ -12,34 +12,21 @@ interface TrendingPropertiesProps {
 const TrendingProperties: React.FC<TrendingPropertiesProps> = ({ properties }) => {
   const [trendingProperties, setTrendingProperties] = useState<Property[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Define items per row based on screen size
-  const itemsPerRow = {
-    mobile: 1,
-    tablet: 2,
-    desktop: 3
-  };
-
-  // Properties to display per page (2 rows * 3 columns = 6 items)
-  const itemsPerPage = 6;
-  const maxInitialProperties = 50;
+  // Fixed number of properties per page - 6 properties (2 rows of 3)
+  const propertiesPerPage = 6;
 
   useEffect(() => {
     const fetchTrendingProperties = async () => {
       try {
         setIsLoading(true);
-        const response = await propertyService.getTrendingProperties(maxInitialProperties);
-        setTrendingProperties(response.data);
-        // Log popularity scores
-        response.data.forEach((property: Property, index: number) => {
-          console.log(`Property ${index + 1}: ${property.propertyName} - Popularity Score: ${property.popularityScore}`);
-        });
-        setHasMore(response.data.length === maxInitialProperties);
+        const response = await propertyService.getTrendingProperties(100); // Fetch more initially
+        setTrendingProperties(response.data || []);
       } catch (error) {
         console.error('Error fetching trending properties:', error);
+        setTrendingProperties([]);
       } finally {
         setIsLoading(false);
       }
@@ -48,146 +35,171 @@ const TrendingProperties: React.FC<TrendingPropertiesProps> = ({ properties }) =
     fetchTrendingProperties();
   }, []);
 
-  const loadMoreProperties = async () => {
-    if (!hasMore || isLoading) return;
+  const totalPages = Math.max(1, Math.ceil(trendingProperties.length / propertiesPerPage));
 
-    try {
-      setIsLoading(true);
-      const response = await propertyService.getTrendingProperties(
-        maxInitialProperties,
-        trendingProperties.length
-      );
-      setTrendingProperties(prev => [...prev, ...response.data]);
-      setHasMore(response.data.length === maxInitialProperties);
-    } catch (error) {
-      console.error('Error loading more properties:', error);
-    } finally {
-      setIsLoading(false);
+  const handlePrevPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(prev => prev - 1);
+      scrollToTop();
     }
   };
 
-  const totalPages = Math.ceil(trendingProperties.length / itemsPerPage);
-
-  const handlePrevPage = () => {
-    setCurrentPage((prev) => (prev > 0 ? prev - 1 : prev));
-  };
-
   const handleNextPage = () => {
-    setCurrentPage((prev) => (prev < totalPages - 1 ? prev + 1 : prev));
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(prev => prev + 1);
+      scrollToTop();
+    }
   };
 
+  const goToPage = (pageIndex: number) => {
+    if (pageIndex >= 0 && pageIndex < totalPages) {
+      setCurrentPage(pageIndex);
+      scrollToTop();
+    }
+  };
+
+  const scrollToTop = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Get current page properties
   const visibleProperties = trendingProperties.slice(
-    currentPage * itemsPerPage,
-    (currentPage + 1) * itemsPerPage
+    currentPage * propertiesPerPage,
+    (currentPage + 1) * propertiesPerPage
   );
 
   return (
-    <div className="relative w-full px-4 md:px-8 lg:px-16 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl ml-8 font-bold text-gray-800">Trending Properties</h2>
-        
-        {/* Navigation Dots for Mobile */}
-        <div className="flex gap-2 md:hidden">
-          {Array.from({ length: totalPages }).map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentPage(idx)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                currentPage === idx ? 'bg-celadon' : 'bg-gray-300'
-              }`}
-            />
-          ))}
+    <div ref={containerRef} className="relative w-full pt-24 py-16 bg-milk/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header with trending fire icon */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="relative flex items-center">
+            <h2 className="text-3xl font-florssolid text-graphite">Trending Properties</h2>
+            <FaFire className="ml-3 text-rustyred animate-pulse" size={24} />
+            <div className="absolute -bottom-2 left-0 w-48 h-1 bg-rustyred rounded-full"></div>
+          </div>
+          
+          <div className="text-graphite font-medium">
+            <span>Scroll to explore</span>
+            <span className="ml-2 text-rustyred">→</span>
+          </div>
         </div>
-      </div>
 
-      <div className="relative px-8">
-        {/* Left Navigation Button */}
-        <button
-          onClick={handlePrevPage}
-          disabled={currentPage === 0}
-          className={`hidden md:block absolute left-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
-            bg-white shadow-lg hover:bg-gray-100 transition-colors ${
-            currentPage === 0 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          <FaChevronLeft size={24} />
-        </button>
-
-        {/* Properties Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
-          {visibleProperties.map((property) => (
-            <div key={property._id} className="w-full transform transition-transform duration-300 hover:scale-[1.02]">
-              <HeroPropertyCard 
-                property={property}
-                onWishlistUpdate={async (propertyId: string) => {
-                  try {
-                    await propertyService.updateWishlist(propertyId, 'add');
-                    // Refresh the properties list to get updated popularity scores
-                    const response = await propertyService.getTrendingProperties(maxInitialProperties);
-                    setTrendingProperties(response.data);
-                  } catch (error) {
-                    console.error('Error updating wishlist:', error);
-                  }
-                }}
-                onClick={async (propertyId: string) => {
-                  try {
-                    await propertyService.incrementPropertyClicks(propertyId);
-                    setSelectedProperty(property);
-                    // Refresh the properties list to get updated popularity scores
-                    const response = await propertyService.getTrendingProperties(maxInitialProperties);
-                    setTrendingProperties(response.data);
-                  } catch (error) {
-                    console.error('Error incrementing clicks:', error);
-                  }
-                }}
-              />
+        {/* Properties display */}
+        <div className="relative">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-96">
+              <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-rustyred"></div>
             </div>
-          ))}
+          ) : (
+            <>
+              {/* Left Navigation Button */}
+              <button
+                onClick={handlePrevPage}
+                disabled={currentPage === 0}
+                className={`absolute -left-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
+                          bg-white shadow-md border border-lightstone/30
+                          transition-all duration-300 focus:outline-none
+                          ${currentPage === 0 ? 'opacity-40 cursor-not-allowed' : 
+                          'hover:bg-rustyred hover:text-white hover:border-rustyred'}`}
+                aria-label="Previous properties"
+              >
+                <FaChevronLeft size={20} />
+              </button>
+
+              {/* Simple Grid Layout - More Robust */}
+              <div className="px-2 mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {visibleProperties.map((property) => (
+                    <div 
+                      key={property._id} 
+                      className="transform transition-all duration-300 hover:-translate-y-2 hover:shadow-lg"
+                    >
+                      <HeroPropertyCard 
+                        property={property}
+                        onWishlistUpdate={async (propertyId: string) => {
+                          try {
+                            await propertyService.updateWishlist(propertyId, 'add');
+                          } catch (error) {
+                            console.error('Error updating wishlist:', error);
+                          }
+                        }}
+                        onClick={async (propertyId: string) => {
+                          try {
+                            await propertyService.incrementPropertyClicks(propertyId);
+                          } catch (error) {
+                            console.error('Error incrementing clicks:', error);
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right Navigation Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage >= totalPages - 1}
+                className={`absolute -right-4 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
+                          bg-white shadow-md border border-lightstone/30
+                          transition-all duration-300 focus:outline-none
+                          ${currentPage >= totalPages - 1 ? 'opacity-40 cursor-not-allowed' : 
+                          'hover:bg-rustyred hover:text-white hover:border-rustyred'}`}
+                aria-label="Next properties"
+              >
+                <FaChevronRight size={20} />
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Load More Button */}
-        {hasMore && (
-          <button
-            onClick={loadMoreProperties}
-            className="bg-celadon text-white py-2 px-4 rounded-full mt-4"
-          >
-            Load More
-          </button>
+        {/* Navigation Dots - Simple and Reliable */}
+        {trendingProperties.length > propertiesPerPage && (
+          <div className="flex justify-center gap-3 mt-8">
+            {Array.from({ length: Math.min(7, totalPages) }).map((_, idx) => {
+              // Handle pagination display logic for many pages
+              let pageIdx = idx;
+              
+              if (totalPages > 7) {
+                if (currentPage < 3) {
+                  // First 5 pages + ellipsis + last page
+                  if (idx === 5) return <span key="ellipsis" className="mx-1 self-end">...</span>;
+                  if (idx === 6) pageIdx = totalPages - 1;
+                } else if (currentPage >= totalPages - 3) {
+                  // First page + ellipsis + last 5 pages
+                  if (idx === 1) return <span key="ellipsis" className="mx-1 self-end">...</span>;
+                  if (idx > 1) pageIdx = totalPages - 7 + idx;
+                } else {
+                  // First page + ellipsis + current & neighbors + ellipsis + last page
+                  if (idx === 1) return <span key="ellipsis1" className="mx-1 self-end">...</span>;
+                  if (idx === 5) return <span key="ellipsis2" className="mx-1 self-end">...</span>;
+                  if (idx === 0) pageIdx = 0;
+                  if (idx === 6) pageIdx = totalPages - 1;
+                  if (idx > 1 && idx < 5) pageIdx = currentPage + (idx - 3);
+                }
+              }
+              
+              const isActive = currentPage === pageIdx;
+              
+              return (
+                <button
+                  key={`page-${pageIdx}`}
+                  onClick={() => goToPage(pageIdx)}
+                  className={`transition-all duration-300 focus:outline-none ${
+                    isActive 
+                      ? 'w-8 h-2 bg-rustyred rounded-full' 
+                      : 'w-2 h-2 bg-lightstone rounded-full hover:bg-desertclay/50'
+                  }`}
+                  aria-label={`Go to page ${pageIdx + 1}`}
+                />
+              );
+            })}
+          </div>
         )}
-
-        {/* Right Navigation Button */}
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage >= totalPages - 1}
-          className={`hidden md:block absolute right-0 top-1/2 -translate-y-1/2 z-10 p-3 rounded-full 
-            bg-white shadow-lg hover:bg-gray-100 transition-colors ${
-            currentPage >= totalPages - 1 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-        >
-          <FaChevronRight size={24} />
-        </button>
       </div>
-
-      {/* Page Indicator */}
-      <div className="hidden md:flex justify-center gap-3 mt-6">
-        {Array.from({ length: totalPages }).map((_, idx) => (
-          <button
-            key={idx}
-            onClick={() => setCurrentPage(idx)}
-            className={`w-3 h-3 rounded-full transition-colors ${
-              currentPage === idx ? 'bg-celadon' : 'bg-gray-300'
-            }`}
-          />
-        ))}
-      </div>
-
-      {/* Property Focus Modal */}
-      {selectedProperty && (
-        <HeroPropertyFocus
-          property={selectedProperty}
-          onClose={() => setSelectedProperty(null)}
-        />
-      )}
     </div>
   );
 };

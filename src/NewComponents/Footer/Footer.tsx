@@ -32,14 +32,14 @@ const Footer = () => {
       {/* Gradient Overlays */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-lightstone/5 to-transparent rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-desertclay/5 to-transparent rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-tl from-rustyred/5 to-transparent rounded-full blur-3xl" />
       </div>
 
       <div className="relative max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Connect Section */}
           <div className="space-y-6">
-            <h3 className="text-desertclay text-2xl font-helvetica mb-4">
+            <h3 className="text-rustyred text-2xl font-helvetica mb-4">
               Let's Connect
             </h3>
             <div className="flex flex-col space-y-4">
@@ -50,10 +50,10 @@ const Footer = () => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center space-x-3 group 
-                           text-milk/60 hover:text-desertclay transition-all duration-300
+                           text-milk/60 hover:text-rustyred transition-all duration-300
                            hover:translate-x-2"
                 >
-                  <span className="transition-colors duration-300 group-hover:text-desertclay">
+                  <span className="transition-colors duration-300 group-hover:text-rustyred">
                     {link.icon}
                   </span>
                   <span>{link.name}</span>
@@ -62,7 +62,7 @@ const Footer = () => {
               <a
                 href="/contactus"
                 className="flex items-center space-x-3 group 
-                         text-milk/60 hover:text-desertclay transition-all duration-300
+                         text-milk/60 hover:text-rustyred transition-all duration-300
                          hover:translate-x-2"
               >
                 <span>Contact Us</span>
@@ -72,7 +72,7 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div className="space-y-6">
-            <h3 className="text-desertclay text-2xl font-helvetica mb-4">
+            <h3 className="text-rustyred text-2xl font-helvetica mb-4">
               Quick Links
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -80,7 +80,7 @@ const Footer = () => {
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}
-                  className="text-milk/60 hover:text-desertclay transition-colors duration-300
+                  className="text-milk/60 hover:text-rustyred transition-colors duration-300
                            font-helvetica-light hover:translate-x-2 transform"
                 >
                   {item}
@@ -91,13 +91,13 @@ const Footer = () => {
 
           {/* Contact & Credits */}
           <div className="space-y-6">
-            <h3 className="text-desertclay text-2xl font-helvetica mb-4">
+            <h3 className="text-rustyred text-2xl font-helvetica mb-4">
               Contact
             </h3>
             <div className="space-y-4">
               <p 
                 onClick={handleContactClick}
-                className="text-milk/60 font-helvetica-light cursor-pointer hover:text-desertclay transition-colors duration-300"
+                className="text-milk/60 font-helvetica-light cursor-pointer hover:text-rustyred transition-colors duration-300"
               >
                 Email: contact@daobitat.com
               </p>
@@ -105,7 +105,7 @@ const Footer = () => {
                 <p className="text-milk/40 font-helvetica-light text-sm">
                   Designed & Built by
                 </p>
-                <p className="text-desertclay font-helvetica">
+                <p className="text-rustyred font-helvetica">
                   DaoBitat
                 </p>
               </div>
