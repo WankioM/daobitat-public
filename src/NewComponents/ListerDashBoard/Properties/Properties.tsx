@@ -25,7 +25,35 @@ const Properties = () => {
   };
 
   useEffect(() => {
-    fetchProperties();
+    const debugFetchProperties = async () => {
+      try {
+        console.log("=========== FETCHING PROPERTIES ===========");
+        console.log("Token:", localStorage.getItem('token')?.substring(0, 20) + '...');
+        
+        console.log("About to call propertyService.getUserProperties()");
+        const response = await propertyService.getUserProperties();
+        
+        console.log("Successfully fetched properties:", response.data);
+        setProperties(response.data.data || []);
+      } catch (err: any) {
+        console.error('DETAILED Error fetching properties:', err);
+        if (err.response) {
+          console.error('Error response data:', err.response.data);
+          console.error('Error response status:', err.response.status);
+          console.error('Error response headers:', err.response.headers);
+        } else if (err.request) {
+          console.error('No response received:', err.request);
+        } else {
+          console.error('Error setting up request:', err.message);
+        }
+        
+        setError('Failed to load properties. Please try again later.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+  
+    debugFetchProperties();
   }, []);
 
   const handlePropertyAdded = () => {

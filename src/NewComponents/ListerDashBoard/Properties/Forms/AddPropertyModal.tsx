@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BasicInfo } from './BasicInfo';
-import { LocationInfo } from './LocationInfo';
+
+import { LocationSearch } from './LocationSearch';
+import { LocationConfirm } from './LocationConfirm';
 import { DetailedInfo } from './DetailedInfo';
 import FinalStep from './FinalStep';
 import { propertyService } from '../../../../services/propertyService';
@@ -44,18 +46,75 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
 
   const steps = [
     { component: BasicInfo, title: "Basic Information" },
-    { component: LocationInfo, title: "Location Details" },
+    { component: LocationSearch, title: "Search Location" },
+    { component: LocationConfirm, title: "Confirm Location" },
     { component: DetailedInfo, title: "Property Details" },
     { component: FinalStep, title: "Final Step" }
   ];
 
-  const handleSubmit = async () => {
-    try {
-      await propertyService.createProperty(formData);
-      onPropertyAdded();
-      onClose();
-    } catch (error) {
-      console.error('Error creating property:', error);
+  // In handleSubmit function in AddPropertyModal.tsx
+const handleSubmit = async () => {
+  try {
+    // If there are images in blob format, process them
+    let processedImages = formData.images || [];
+    
+    if (processedImages.some(img => img.startsWith('blob:'))) {
+      // Use the batch processing service for any blob URLs
+      processedImages = await propertyService.processBatchPropertyImages(processedImages);
+    }
+    
+    // Create a submission-ready copy of the form data with processed images
+    const submissionData = {
+      ...formData,
+      images: processedImages
+    };
+    
+    await propertyService.createProperty(submissionData);
+    onPropertyAdded();
+    onClose();
+  } catch (error) {
+    console.error('Error creating property:', error);
+    // Show an error message to the user
+  }
+};
+
+  const validateStep = (currentStep: number) => {
+    switch (currentStep) {
+      case 1: // Basic Info validation
+        return formData.propertyName && formData.propertyType && formData.specificType
+          ? true
+          : "Please fill in all required fields marked with *";
+      
+      case 2: // Location Search validation
+        return formData.location && formData.coordinates.lat !== 0 && formData.coordinates.lng !== 0
+          ? true
+          : "Please search and select a location";
+      
+      case 3: // Location Confirm validation
+        // No additional validation needed as the coordinates are already set
+        return true;
+      
+      case 4: // Detailed Info validation
+        // You could add validation for price, action, etc.
+        return true;
+      
+      case 5: // Final Step validation
+        return formData.termsAccepted
+          ? true
+          : "Please accept the terms and conditions";
+      
+      default:
+        return true;
+    }
+  };
+
+  const goToNextStep = () => {
+    const validation = validateStep(step);
+    
+    if (validation === true) {
+      setStep(s => s + 1);
+    } else {
+      alert(validation);
     }
   };
 
@@ -66,13 +125,14 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-40 overflow-visible"
         >
           <motion.div 
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
-            className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl"
+            className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-xl max-h-[90vh] overflow-visible"
+            style={{ position: 'relative' }}
           >
             <div className="mb-6">
               <h2 className="font-helvetica-regular text-2xl font-bold text-slategray">
@@ -91,7 +151,9 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
               </div>
             </div>
 
-            {React.createElement(steps[step - 1].component, { formData, setFormData })}
+            <div className="overflow-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+              {React.createElement(steps[step - 1].component, { formData, setFormData })}
+            </div>
 
             <div className="flex justify-between mt-6">
               <div className="flex gap-2">
@@ -111,21 +173,12 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                 )}
               </div>
               <button
-                onClick={step === 4 ? handleSubmit : () => {
-                  // Validation for step 1
-                  if (step === 1) {
-                    if (!formData.propertyName || !formData.propertyType || !formData.specificType) {
-                      alert('Please fill in all required fields marked with *');
-                      return;
-                    }
-                  }
-                  setStep(s => s + 1);
-                }}
+                onClick={step === 5 ? handleSubmit : goToNextStep}
                 className={`px-4 py-2 text-white rounded-lg font-helvetica-regular ${
-                  step === 4 ? 'bg-celadon hover:bg-slategray' : 'bg-celadon hover:bg-slategray'
+                  step === 5 ? 'bg-celadon hover:bg-slategray' : 'bg-celadon hover:bg-slategray'
                 }`}
               >
-                {step === 4 ? 'Submit' : 'Next'}
+                {step === 5 ? 'Submit' : 'Next'}
               </button>
             </div>
           </motion.div>

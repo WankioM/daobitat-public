@@ -4,6 +4,7 @@ import { FaHome, FaMapMarkerAlt, FaBed, FaSwimmingPool, FaCreditCard, FaImage, F
 import { StepProps } from '../propertyTypes';
 import ImageUploadModal from './ImageModal';
 import TermsPopup from './TermsPopUp';
+import { uploadImageToGCS } from '../../../../services/imageUpload';
 
 const fadeIn = {
     hidden: { opacity: 0, y: 20 },
