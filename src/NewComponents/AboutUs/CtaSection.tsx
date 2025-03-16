@@ -10,8 +10,8 @@ const CtaSection = () => {
             Ready to <span className="text-red">Get Started</span>?
           </h2>
           <p className="text-lg text-beige mb-8 md:mb-10">
-            Let's work together to bring your vision to life.
-            Our team is ready to collaborate with you on your next project.
+          Let’s Build Something Great Together.
+          We’re here to help turn your real estate vision into reality.
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-4">
