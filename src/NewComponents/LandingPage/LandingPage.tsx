@@ -41,59 +41,70 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen ">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-graphite via-graphite/90 to-graphite/70 relative overflow-hidden">
+  {/* More obvious animated gradient overlay */}
+  <div className="absolute inset-0 bg-gradient-to-r from-rustyred/20 via-graphite to-rustyred/20 bg-[length:200%_100%] animate-gradient-x"></div>
       {/* Header */}
       <Header />
 
-      {/* Hero Section - Takes up 2/3 of viewport height */}
-      <div className="relative h-[calc(67vh)] ">
-        {/* Main Image */}
-        <div className="relative w-full h-full">
+      {/* Hero Section - Takes up 100vh with Featured Properties at bottom */}
+      <div className="relative h-[100vh] overflow-visible">
+        {/* Main Image with Gradient Overlay */}
+        <div className="absolute inset-0">
           <img 
             src={LapImage} 
             alt="Luxury accommodation" 
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-graphite/60 to-graphite/30" />
-          
-          {/* Hero Content - Centered */}
-          <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-4">
-            <div className="max-w-3xl">
-              <h1 className="text-5xl md:text-6xl font-helvetica text-milk leading-tight mb-6">
-                Find Home. Feel Home
-              </h1>
-              <p className="text-xl md:text-2xl font-helvetica-light text-milk/90 leading-relaxed mb-8">
-                We Make Property Search Easy & Secure.
-              </p>
-              <button
-                onClick={handleExploreClick}
-                className="px-10 py-4 text-lg font-medium text-milk bg-desertclay 
-                         rounded-full transition-all duration-300 hover:bg-lightstone
-                         hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                Explore
-              </button>
-            </div>
-          </div>
-
-          {/* Scroll Indicator */}
-          <FaChevronDown 
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-milk/80 
-                       animate-bounce w-6 h-6 cursor-pointer"
-            onClick={handleExploreClick}
-          />
+          <div className="absolute inset-0 bg-gradient-to-br from-graphite/90 via-graphite/75 to-graphite/60" />
         </div>
-      </div>
+        
+        {/* Hero Content - Positioned Higher */}
+        <div className="absolute inset-0 flex flex-col justify-center items-center text-center px-4 pt-0 pb-32">
+          <div className="max-w-3xl">
+            <h1 className="text-5xl md:text-6xl font-florsoutline text-milk leading-tight mb-6">
+              Why Wait?
+            </h1>
+            <h1 className="text-5xl md:text-6xl font-florssolid text-milk leading-tight mb-6">
+              Own or rent now.
+            </h1>
+            
+            <button
+              onClick={handleExploreClick}
+              className="px-10 py-4 text-lg font-medium text-graphite bg-milk 
+                      rounded-full transition-all duration-300 border border-transparent
+                      hover:border-rustyred hover:bg-milk/20 hover:-translate-y-0.5 hover:shadow-lg"
+            >
+              Explore
+            </button>
+          </div>
+        </div>
 
-      {/* Properties Sections */}
-      <div className="bg-milk">
-        {/* Featured Properties */}
-        <div ref={featuredRef}>
+        {/* Featured Properties at Bottom of Hero Section */}
+        <div 
+          ref={featuredRef} 
+          className="absolute bottom-0 left-0 right-0 w-full"
+          style={{ top: '65vh' }}
+        >
           <FeaturedProperties />
         </div>
 
+        {/* Scroll Indicator - Positioned Just Above Featured Properties */}
+        <FaChevronDown 
+          className="absolute left-1/2 -translate-x-1/2 text-milk/80 
+                    animate-bounce w-6 h-6 cursor-pointer"
+          style={{ bottom: 'calc(35vh + 16px)' }}
+          onClick={handleExploreClick}
+        />
+      </div>
+
+      {/* Spacer to push SearchBox down */}
+      <div className="h-[30vh] bg-graphite/20"></div>
+
+      {/* Rest of the Page Content */}
+      <div className="bg-milk pt-45">
         {/* Search Box */}
-        <div className=" w-full bg-lightstone">
+        <div className="w-full bg-lightstone ">
           <SearchBox />
         </div>
 

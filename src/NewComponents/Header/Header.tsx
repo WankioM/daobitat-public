@@ -38,9 +38,9 @@ export const Header = () => {
           item === 'About' ? (
             <Link to="/about" key={item}>
               <div
-                className="text-milk font-helvetica hover:text-desertclay cursor-pointer
+                className="text-milk font-helvetica hover:text-rustyred cursor-pointer
                          relative after:content-[''] after:absolute after:w-0 after:h-0.5
-                         after:bg-desertclay after:left-1/2 after:-bottom-1.5
+                         after:bg-rustyred after:left-1/2 after:-bottom-1.5
                          after:transition-all after:duration-300
                          hover:after:w-full hover:after:left-0"
               >
@@ -50,9 +50,9 @@ export const Header = () => {
           ) : (
             <div
               key={item}
-              className="text-milk font-helvetica hover:text-desertclay cursor-pointer
+              className="text-milk font-helvetica hover:text-rustyred cursor-pointer
                        relative after:content-[''] after:absolute after:w-0 after:h-0.5
-                       after:bg-desertclay after:left-1/2 after:-bottom-1.5
+                       after:bg-rustyred after:left-1/2 after:-bottom-1.5
                        after:transition-all after:duration-300
                        hover:after:w-full hover:after:left-0"
             >
@@ -66,18 +66,18 @@ export const Header = () => {
         {!user ? (
           <Link
             to="/login"
-            className="px-4 py-2 border border-desertclay rounded-full text-milk
-                     transition-all duration-300 hover:bg-desertclay hover:text-milk
-                     hover:shadow-lg hover:shadow-desertclay/20"
+            className="px-4 py-2 border border-rustyred rounded-full text-milk
+                     transition-all duration-300 hover:bg-rustyred hover:text-milk
+                     hover:shadow-lg hover:shadow-rustyred/20"
           >
             Sign In
           </Link>
         ) : (
           <div
             onClick={handleUsernameClick}
-            className="px-4 py-2 border border-desertclay rounded-full text-milk
-                     transition-all duration-300 hover:bg-desertclay hover:text-milk
-                     hover:shadow-lg hover:shadow-desertclay/20 cursor-pointer"
+            className="px-4 py-2 border border-rustyred rounded-full text-milk
+                     transition-all duration-300 hover:bg-rustyred hover:text-milk
+                     hover:shadow-lg hover:shadow-rustyred/20 cursor-pointer"
           >
             Hi, {user.name}
           </div>
