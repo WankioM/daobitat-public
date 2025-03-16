@@ -23,13 +23,13 @@ const FeaturedProperties = () => {
     {
       img: "https://i.pinimg.com/736x/6c/8c/40/6c8c407f2137453a2862b4fc13ba6db9.jpg",
       title: "Modern Beachfront Villa",
-      price: "499",
+      price: "49900",
       location: "Bali, Indonesia"
     },
     {
       img: "https://i.pinimg.com/736x/c2/e3/e6/c2e3e6e0cb1ac12673adc1ae179785aa.jpg",
       title: "Luxury Mountain Retreat",
-      price: "399",
+      price: "39900",
       location: "Aspen, USA"
     },
     {
