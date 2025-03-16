@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @font-face {
   font-family: 'Helvetica-Regular';
   src: url('./Assets/fonts/Helvetica.ttf') format('truetype');
@@ -30,4 +31,81 @@ body {
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+
+@layer base {
+  :root {
+    --background: 45 36% 93%; /* #F9F7F0 */
+    --foreground: 240 2% 28%; /* #4A4947 */
+    --card: 45 36% 93%; /* #F9F7F0 */
+    --card-foreground: 240 2% 28%; /* #4A4947 */
+    --popover: 45 36% 93%; /* #F9F7F0 */
+    --popover-foreground: 240 2% 28%; /* #4A4947 */
+    --primary: 355 71% 52%; /* #D43545 */
+    --primary-foreground: 45 36% 93%; /* #F9F7F0 */
+    --secondary: 36 23% 82%; /* #DBD2C2 */
+    --secondary-foreground: 240 2% 28%; /* #4A4947 */
+    --muted: 36 23% 82%; /* #DBD2C2 */
+    --muted-foreground: 240 2% 28%; /* #4A4947 */
+    --accent: 36 23% 82%; /* #DBD2C2 */
+    --accent-foreground: 240 2% 28%; /* #4A4947 */
+    --destructive: 355 71% 52%; /* #D43545 */
+    --destructive-foreground: 45 36% 93%; /* #F9F7F0 */
+    --border: 36 23% 82%; /* #DBD2C2 */
+    --input: 36 23% 82%; /* #DBD2C2 */
+    --ring: 355 71% 52%; /* #D43545 */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 240 2% 28%; /* #4A4947 */
+    --foreground: 45 36% 93%; /* #F9F7F0 */
+    --card: 240 2% 28%; /* #4A4947 */
+    --card-foreground: 45 36% 93%; /* #F9F7F0 */
+    --popover: 240 2% 28%; /* #4A4947 */
+    --popover-foreground: 45 36% 93%; /* #F9F7F0 */
+    --primary: 355 71% 52%; /* #D43545 */
+    --primary-foreground: 45 36% 93%; /* #F9F7F0 */
+    --secondary: 36 23% 82%; /* #DBD2C2 */
+    --secondary-foreground: 240 2% 28%; /* #4A4947 */
+    --muted: 36 23% 82%; /* #DBD2C2 */
+    --muted-foreground: 240 2% 28%; /* #4A4947 */
+    --accent: 36 23% 82%; /* #DBD2C2 */
+    --accent-foreground: 240 2% 28%; /* #4A4947 */
+    --destructive: 355 71% 52%; /* #D43545 */
+    --destructive-foreground: 45 36% 93%; /* #F9F7F0 */
+    --border: 36 23% 82%; /* #DBD2C2 */
+    --input: 36 23% 82%; /* #DBD2C2 */
+    --ring: 355 71% 52%; /* #D43545 */
+  }
+}
+
+
+
+@layer utilities {
+  .bg-cream {
+    background-color: #F9F7F0;
+  }
+  .bg-beige {
+    background-color: #DBD2C2;
+  }
+  .bg-red {
+    background-color: #D43545;
+  }
+  .bg-dark {
+    background-color: #4A4947;
+  }
+  .text-cream {
+    color: #F9F7F0;
+  }
+  .text-beige {
+    color: #DBD2C2;
+  }
+  .text-red {
+    color: #D43545;
+  }
+  .text-dark {
+    color: #4A4947;
+  }
 }
