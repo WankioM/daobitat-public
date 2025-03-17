@@ -13,20 +13,20 @@ const QuoteSection = () => {
           </div>
 
           <blockquote className="text-xl md:text-2xl text-dark font-medium italic mb-8">
-            A living force exists within everything we create. Even small acts of creativity or kindness have the power to ripple out and contribute to a sustained imagination that makes things possible again and again.
+          For once, I don’t need to ‘know a guy who knows a guy’ to invest in real estate.
           </blockquote>
 
           <div className="flex items-center">
             <div className="w-12 h-12 rounded-full overflow-hidden mr-4">
               <img
-                src="https://images.unsplash.com/photo-1548142813-c348350df52b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=389&q=80"
+                src="https://media.licdn.com/dms/image/v2/D4D03AQEND-AJ00dZjw/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1711210431236?e=1747872000&v=beta&t=Rz4svPZwgCQE4o8UAP-9Y5j3rDxdd8JglJ4MRvJVrm0"
                 alt="CEO"
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
-              <p className="font-bold text-dark">Jane Smith</p>
-              <p className="text-dark/70 text-sm">Founder & CEO</p>
+              <p className="font-bold text-dark">Andre Owano</p>
+              <p className="text-dark/70 text-sm">Lives in Nairobi</p>
             </div>
           </div>
         </div>

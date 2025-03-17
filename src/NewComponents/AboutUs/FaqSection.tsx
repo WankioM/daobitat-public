@@ -11,28 +11,28 @@ import {
 const FaqSection = () => {
   const faqs = [
     {
-      question: "What do you want to radically reimagine?",
-      answer: "We want to radically reimagine the way people interact with technology and with each other. We believe in creating experiences that bring people together, foster connection, and inspire positive change in the world."
+      question: "How secure is the platform?",
+      answer: "While I'd love to spare you the countless security measures we have in place, just know that your safety is our top priority. We use advanced encryption and secure authentication to protect your data and transactions, and we regularly audit our systems to keep everything airtight. Plus, we're ACCDDID compliant and follow strict AML and KYC regulations, so every transaction is transparent, secure, and fraud-free."
     },
     {
-      question: "How do you approach new projects?",
-      answer: "Each project begins with deep listening and understanding. We take time to understand your vision, goals, and challenges. Then we collaborate closely with you to develop innovative solutions that align with your objectives while pushing the boundaries of what's possible."
+      question: "How is Daobitat different from other real estate platforms?",
+      answer: "While most platforms just show you property listings, we take it a step further. We use blockchain to guarantee transparency and security in every deal, with verified listings, escrow protection to keep your money safe while the fine print gets sorted, and multiple payment options—crypto, mobile money, or traditional banking. So whether you're buying or renting, you can verify ownership and close the deal with confidence, minus the usual headaches."
     },
     {
-      question: "What industries do you work with?",
-      answer: "We work across a diverse range of industries including technology, education, healthcare, and social impact. Our team brings experience from various sectors, allowing us to approach problems from multiple perspectives and create truly innovative solutions."
+      question: "How do I benefit as a property developer/owner from Daobitat?",
+      answer: "We help you reach serious buyers and renters quickly, with verified listings that make decision-making easier for home searchers. Beyond just giving you visibility, we also reduce fraud risks for your potential customers by verifying ownership and securing transactions through escrow. This creates trust, increases buyer confidence, and ultimately helps more people invest in real estate—maximizing your ROI in the process."
     },
     {
-      question: "How do you measure success?",
-      answer: "Success for us goes beyond traditional metrics. While we value efficiency and effectiveness, we also measure success by the positive impact our work has on people's lives, the sustainability of our solutions, and the learning and growth that happens throughout the process."
+      question: "How do I benefit as a home searcher?",
+      answer: "Finding a home should be easy and stress-free, and that’s exactly what Daobitat offers. Our verified listings mean you don’t waste time on fake or misrepresented properties, and our escrow service ensures your money is safe until everything is finalized. You can search, compare, and even transact using multiple payment options—including crypto, mobile money, and traditional banking—all in one place. Plus, with real-time updates on property availability, you’ll never miss out on your dream home."
     },
     {
-      question: "Do you offer ongoing support for your projects?",
-      answer: "Yes, we believe in building lasting relationships. We offer various levels of ongoing support and maintenance to ensure your project continues to thrive long after the initial launch. Our team is committed to your long-term success."
+      question: "I dont want to miss out, How do I get started?",
+      answer: "No More FOMO.Sign up now and explore verified properties, hassle-free!."
     },
     {
-      question: "How can we start working together?",
-      answer: "Starting a collaboration is simple. Reach out to us through our contact form or email, and we'll schedule an initial consultation to discuss your project. From there, we'll develop a tailored approach that meets your specific needs and objectives."
+      question: "Can I get financing or mortgage options through Daobitat??",
+      answer: "We’re working on it! Soon, you’ll be able to access financing options through our trusted partners, helping you buy property without paying everything upfront."
     }
   ];
 
@@ -65,7 +65,7 @@ const FaqSection = () => {
 
         <div className="mt-16 text-center">
           <p className="text-lg text-dark/80 mb-6">
-            Still have questions? We're here to help!
+            Want to have a longer conversation with us?!
           </p>
           <a
             href="#contact"
