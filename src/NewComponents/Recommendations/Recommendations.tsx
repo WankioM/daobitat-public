@@ -32,12 +32,12 @@ const secondaryPhrase = "If You List It, Verify It";
     
     // Create primary phrase container
     const primaryDiv = document.createElement('div');
-    primaryDiv.className = 'text-milk text-4xl font-florssolid font-medium tracking-wide';
+    primaryDiv.className = 'text-milk text-4xl font-helvetica font-medium tracking-wide';
     textRef.current.appendChild(primaryDiv);
     
     // Create secondary phrase container
     const secondaryDiv = document.createElement('div');
-    secondaryDiv.className = 'text-milk text-3xl font-florssolid font-normal tracking-wide mt-2';
+    secondaryDiv.className = 'text-milk text-3xl font-helvetica font-normal tracking-wide mt-2';
     textRef.current.appendChild(secondaryDiv);
     
     // Create spans for primary phrase
