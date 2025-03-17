@@ -20,12 +20,12 @@ const TeamSection = () => {
     <div className="bg-cream py-16 md:py-24">
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-dark mb-6">
+          <h2 className="text-3xl md:text-4xl font-florssolid text-dark mb-6">
             Meet Our <span className="text-red">Team</span>
           </h2>
-          <p className="text-lg text-dark/80">
-          For us, home is more than a place—it’s a feeling.
-          And we’re here to help you find yours.
+          <p className="text-lg text-dark/80 text-center">
+            For us, home is more than a place—it's a feeling.
+            And we're here to help you find yours.
           </p>
         </div>
 

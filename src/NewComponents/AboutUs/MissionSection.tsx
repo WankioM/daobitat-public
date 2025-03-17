@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 
 const MissionSection: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
-  const totalSlides = 2; // We have 5 cards but showing 3 at a time, so 2 slide positions (0, 1)
+  const totalSlides = 2; 
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Card data
@@ -62,7 +62,7 @@ const MissionSection: React.FC = () => {
     }
   ];
 
-  // Handle navigation
+ 
   const goToSlide = (slideIndex: number) => {
     if (slideIndex >= 0 && slideIndex < totalSlides) {
       setCurrentSlide(slideIndex);
@@ -76,10 +76,10 @@ const MissionSection: React.FC = () => {
   };
 
   return (
-    <div className="bg-beige py-16 md:py-24">
+    <div className="bg-beige py-16 md:py-20">
       <div className="container mx-auto px-4 md:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-dark mb-6">
+          <h2 className="text-3xl md:text-4xl font-florssolid text-dark mb-6">
             Real Estate That <span className="text-red">Moves</span> at the Speed of <span className="text-red">Crypto</span>
           </h2>
           <p className="text-lg text-dark/80">
@@ -88,6 +88,8 @@ const MissionSection: React.FC = () => {
             transactions seamless, so you can invest with confidence.
           </p>
         </div>
+        
+      
         
         {/* Navigation controls */}
         <div className="flex justify-center mb-6 gap-2">
@@ -148,7 +150,7 @@ const MissionSection: React.FC = () => {
                   <div className="w-12 h-12 bg-red/10 rounded-lg flex items-center justify-center mb-6">
                     {card.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-dark mb-3">{card.title}</h3>
+                  <h3 className="text-xl font-bold font-florssolid text-dark mb-3">{card.title}</h3>
                   <p className="text-dark/80">{card.text}</p>
                 </div>
               ))}
@@ -164,7 +166,7 @@ const MissionSection: React.FC = () => {
                   <div className="w-12 h-12 bg-red/10 rounded-lg flex items-center justify-center mb-6">
                     {card.icon}
                   </div>
-                  <h3 className="text-xl font-bold text-dark mb-3">{card.title}</h3>
+                  <h3 className="text-xl font-bold font-florssolid text-dark mb-3">{card.title}</h3>
                   <p className="text-dark/80">{card.text}</p>
                 </div>
               ))}
