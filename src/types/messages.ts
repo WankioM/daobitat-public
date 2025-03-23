@@ -11,6 +11,7 @@ export interface Property {
   propertyName: string;
   propertyType?: string;
   images?: string[];
+  
   // Keeping all property fields that might be needed
 }
 
@@ -20,11 +21,15 @@ export interface OfferDetails {
   currency: string;
   currencySymbol: string;
   duration: number;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'withdrawn' | 'completed';
+  status: 'pending' | 'accepted' | 'pending_acceptance'| 'rejected' | 'expired' | 'withdrawn' | 'completed';
   securityDeposit: number;
   moveInDate: Date | string;
   propertyImage?: string;
   totalAmount?: number;
+  transactionType?: 'rental' | 'sale';
+  responseType?: 'acceptance' | 'rejection' | 'counter' | 'withdrawal';
+  expiry?: Date | string;
+  isCounterOffer?: boolean;
 }
 
 export interface Message {
@@ -34,11 +39,11 @@ export interface Message {
   property: Property;
   content: string;
   read: boolean;
-  type: 'text' | 'offer';
+  type: 'text' | 'offer' | 'offer_response' | 'payment_proof' | 'payment_confirmation'; // Update this line
   offerDetails?: OfferDetails;
-  createdAt: Date | string;  // Supporting both Date and string for flexibility
+  createdAt: Date | string;
+  paymentProof?: any; // Add this if needed
 }
-
 // Chat-specific interfaces from the original types
 export interface ChatContact {
   user: User;
@@ -68,8 +73,8 @@ export interface ChatWindowProps {
 
 // Message content for API communications
 export interface MessageContent {
-  type: 'text' | 'offer';
-  content: string;
+  type: 'text' | 'offer' | 'offer_response' | 'payment_proof' | 'payment_confirmation';
+  content?: string;
   offerDetails?: OfferDetails;
 }
 
@@ -86,6 +91,6 @@ export interface CreateOfferDTO {
   expiry: Date;
 }
 
-export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'expired' | 'withdrawn' | 'completed';
+export type OfferStatus = 'pending' | 'accepted' | 'pending_acceptance' | 'rejected' | 'expired' | 'withdrawn' | 'completed';
 export type PaymentStatus = 'awaiting' | 'processing' | 'completed' | 'failed' | 'refunded';
 export type PaymentType = 'rent' | 'deposit' | 'refund';

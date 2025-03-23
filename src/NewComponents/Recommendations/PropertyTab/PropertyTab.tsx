@@ -136,6 +136,7 @@ const PropertyTab: React.FC = () => {
         ownerId={property.owner._id}
         listingPrice={property.price}
         currency={property.currency || 'USD'}
+        propertyData={property as unknown as import('../../../services/offerService').Property}// Add the missing propertyData prop
       />
     </div>
   );

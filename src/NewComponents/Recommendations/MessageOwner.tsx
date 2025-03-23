@@ -31,6 +31,7 @@ const MessageOwner: React.FC<MessageOwnerProps> = ({
     sessionStorage.setItem('newThreadInfo', JSON.stringify(newThreadInfo));
     
     // Navigate to the Messages tab in ListerDashboard
+    console.log('Navigating to ListerDashboard with newThreadInfo:', newThreadInfo);
     navigate('/listerdashboard', { 
       state: { 
         activeTab: 'Messages',

@@ -1,24 +1,26 @@
-import { MongoDBId } from '../types/messages';
-
-export const getMongoId = (id: string | MongoDBId | undefined): string | undefined => {
+export const getMongoId = (id: any): string | undefined => {
   if (!id) return undefined;
+  
+  // Case 1: String ID
   if (typeof id === 'string') return id;
+  
+  // Case 2: MongoDB Extended JSON format { $oid: "..." }
   if (typeof id === 'object' && id.$oid) return id.$oid;
+  
+  // Case 3: ObjectId with toString method
+  if (typeof id === 'object' && typeof id.toString === 'function') {
+    const idStr = id.toString();
+    // Only return if it looks like a valid MongoDB ObjectId (24 hex chars)
+    if (/^[0-9a-fA-F]{24}$/.test(idStr)) {
+      return idStr;
+    }
+  }
+  
+  // Case 4: Handle the _id property if present
+  if (typeof id === 'object' && id._id) {
+    return getMongoId(id._id); // Recursive call to handle nested _id
+  }
+  
+  console.error('Unable to extract MongoDB ID from:', id);
   return undefined;
-};
-
-// Type guard to check if an ID is in MongoDB format
-export const isMongoDBId = (id: any): id is MongoDBId => {
-  return typeof id === 'object' && id !== null && '$oid' in id;
-};
-
-// Helper to convert string ID to MongoDB format
-export const toMongoId = (id: string): MongoDBId => {
-  return { $oid: id };
-};
-
-// Helper to ensure consistent ID format
-export const normalizeMongoId = (id: string | MongoDBId | undefined): MongoDBId | undefined => {
-  const stringId = getMongoId(id);
-  return stringId ? toMongoId(stringId) : undefined;
 };

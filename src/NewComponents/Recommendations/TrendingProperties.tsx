@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { FaChevronLeft, FaChevronRight, FaFire } from 'react-icons/fa';
 import { propertyService } from '../../services/propertyService';
 import HeroPropertyCard from './HeroPropertyCard';
-import HeroPropertyFocus from './HeroPropertyFocus';
 import { Property } from '../ListerDashBoard/Properties/propertyTypes';
 
 interface TrendingPropertiesProps {
@@ -70,6 +69,24 @@ const TrendingProperties: React.FC<TrendingPropertiesProps> = ({ properties }) =
     (currentPage + 1) * propertiesPerPage
   );
 
+  // Handle property clicks (for analytics)
+  const handlePropertyClick = async (propertyId: string) => {
+    try {
+      await propertyService.incrementPropertyClicks(propertyId);
+    } catch (error) {
+      console.error('Error incrementing property clicks:', error);
+    }
+  };
+
+  // Handle wishlist updates
+  const handleWishlistUpdate = async (propertyId: string, action: 'add' | 'remove') => {
+    try {
+      await propertyService.updateWishlist(propertyId, action);
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative w-full pt-24 py-16 bg-milk/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -119,20 +136,8 @@ const TrendingProperties: React.FC<TrendingPropertiesProps> = ({ properties }) =
                     >
                       <HeroPropertyCard 
                         property={property}
-                        onWishlistUpdate={async (propertyId: string) => {
-                          try {
-                            await propertyService.updateWishlist(propertyId, 'add');
-                          } catch (error) {
-                            console.error('Error updating wishlist:', error);
-                          }
-                        }}
-                        onClick={async (propertyId: string) => {
-                          try {
-                            await propertyService.incrementPropertyClicks(propertyId);
-                          } catch (error) {
-                            console.error('Error incrementing clicks:', error);
-                          }
-                        }}
+                        onClick={handlePropertyClick}
+                        onWishlistUpdate={handleWishlistUpdate}
                       />
                     </div>
                   ))}

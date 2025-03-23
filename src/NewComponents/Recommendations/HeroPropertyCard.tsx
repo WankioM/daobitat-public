@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 interface HeroPropertyCardProps {
   property: Property;
-  onClick: (propertyId: string) => void;
+  onClick?: (propertyId: string) => void;
   onWishlistUpdate: (propertyId: string, action: 'add' | 'remove') => void;
 }
 
@@ -31,7 +31,10 @@ const HeroPropertyCard: React.FC<HeroPropertyCardProps> = ({
     return text.slice(0, maxLength) + '...';
   };
 
-  const handleWishlistClick = async () => {
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    // Prevent the card click event from triggering
+    e.stopPropagation();
+    
     if (!user) {
       // Show login prompt
       const shouldLogin = window.confirm('You need to be logged in to add properties to your wishlist. Would you like to log in?');
@@ -49,16 +52,28 @@ const HeroPropertyCard: React.FC<HeroPropertyCardProps> = ({
       console.error('Error updating wishlist:', error);
     }
   };
+  
+  const handleCardClick = () => {
+    // Track the click if onClick handler is provided
+    if (onClick) {
+      onClick(property._id);
+    }
+    
+    // Navigate to the property details page
+    navigate(`/property-details/${property._id}`);
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
+    <div 
+      className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 cursor-pointer"
+      onClick={handleCardClick}
+    >
       <div className="relative">
         <div className="aspect-[16/9] overflow-hidden">
           <img 
             src={property.images?.[0] || '/default-property-image.jpg'} 
             alt={property.propertyName}
             className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
-            onClick={() => onClick(property._id)}
           />
         </div>
         <button 

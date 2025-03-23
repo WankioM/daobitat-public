@@ -36,25 +36,25 @@ const FeaturedProperties = () => {
       img: "https://i.pinimg.com/736x/ec/37/0b/ec370bfb3649a826a95019534608690a.jpg",
       title: "Contemporary City Penthouse",
       price: "59900",
-      location: "Tokyo, Japan"
+      location: "Kilimani"
     },
     {
       img: "https://town-n-country-living.com/wp-content/uploads/2023/10/rustic-porch.jpg",
       title: "Charming Country Estate",
       price: "45000",
-      location: "Tuscany, Italy"
+      location: "Baba dogo"
     },
     {
       img: "https://i.pinimg.com/originals/8c/ea/5d/8cea5d6961b13e9e99d36d5fc98acec9.jpg",
       title: "Oceanfront Paradise",
       price: "64900",
-      location: "Phuket, Thailand"
+      location: "Malindi"
     },
     {
       img: "https://coresites-cdn-adm.imgix.net/mpora_new/wp-content/uploads/2015/12/Mountain-Cabins-Swiss-Alps.jpg",
       title: "Alpine Cabin",
       price: "35000",
-      location: "Swiss Alps"
+      location: "Nanyuki"
     }
   ];
 

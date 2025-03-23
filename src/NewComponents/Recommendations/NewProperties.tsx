@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaChevronLeft, FaChevronRight, FaExpand, FaCompress } from 'react-icons/fa';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import HeroPropertyCard from './HeroPropertyCard';
-import HeroPropertyFocus from './HeroPropertyFocus';
 import { Property } from '../ListerDashBoard/Properties/propertyTypes';
 import { propertyService } from '../../services/propertyService';
 
@@ -12,7 +11,6 @@ interface NewPropertiesProps {
 const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [newProperties, setNewProperties] = useState<Property[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const itemsPerPage = 3; // Show 3 properties at a time
 
@@ -58,7 +56,23 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
     }, 500);
   };
 
-  // No longer need the toggle expand function or visibleProperties
+  // Handle property clicks for analytics
+  const handlePropertyClick = async (propertyId: string) => {
+    try {
+      await propertyService.incrementPropertyClicks(propertyId);
+    } catch (error) {
+      console.error('Error incrementing property clicks:', error);
+    }
+  };
+
+  // Handle wishlist updates
+  const handleWishlistUpdate = async (propertyId: string, action: 'add' | 'remove') => {
+    try {
+      await propertyService.updateWishlist(propertyId, action);
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+    }
+  };
 
   return (
     <div className="relative w-full py-12 bg-milk">
@@ -107,21 +121,8 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
                 >
                   <HeroPropertyCard 
                     property={property}
-                    onWishlistUpdate={async (propertyId: string) => {
-                      try {
-                        await propertyService.updateWishlist(propertyId, 'add');
-                      } catch (error) {
-                        console.error('Error updating wishlist:', error);
-                      }
-                    }}
-                    onClick={async (propertyId: string) => {
-                      try {
-                        await propertyService.incrementPropertyClicks(propertyId);
-                        setSelectedProperty(property);
-                      } catch (error) {
-                        console.error('Error incrementing clicks:', error);
-                      }
-                    }}
+                    onWishlistUpdate={handleWishlistUpdate}
+                    onClick={handlePropertyClick}
                   />
                 </div>
               ))}
@@ -166,14 +167,6 @@ const NewProperties: React.FC<NewPropertiesProps> = ({ properties }) => {
           }
         </div>
       </div>
-
-      {/* Property Focus Modal */}
-      {selectedProperty && (
-        <HeroPropertyFocus
-          property={selectedProperty}
-          onClose={() => setSelectedProperty(null)}
-        />
-      )}
     </div>
   );
 };

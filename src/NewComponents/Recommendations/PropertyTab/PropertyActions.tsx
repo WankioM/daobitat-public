@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaHandshake } from 'react-icons/fa';
 import MessageOwner from '../MessageOwner';
 import MakeOfferModal from '../../PaymentFlow/Offer/MakeOfferModal';
+import { Property } from '../../ListerDashBoard/Properties/propertyTypes';
 
 interface PropertyActionsProps {
   propertyId: string;
@@ -10,6 +11,7 @@ interface PropertyActionsProps {
   ownerName: string;
   price: number;
   currency: string;
+  propertyData: Property; // Add property data to props
 }
 
 const PropertyActions: React.FC<PropertyActionsProps> = ({
@@ -18,7 +20,8 @@ const PropertyActions: React.FC<PropertyActionsProps> = ({
   ownerId,
   ownerName,
   price,
-  currency
+  currency,
+  propertyData // Add propertyData to destructuring
 }) => {
   const [showOfferModal, setShowOfferModal] = useState(false);
 
@@ -47,6 +50,7 @@ const PropertyActions: React.FC<PropertyActionsProps> = ({
         ownerId={ownerId}
         listingPrice={price}
         currency={currency}
+        propertyData={propertyData as unknown as import('../../../services/offerService').Property} // Fixed: use propertyData instead of property
       />
     </div>
   );

@@ -294,7 +294,7 @@ export const propertyService = {
   },
 
   getUserProperties: () => {
-    return api.get('/api/properties/my-properties');
+    return api.get('/api/properties/user/properties');
   },
 
   // Property Images
