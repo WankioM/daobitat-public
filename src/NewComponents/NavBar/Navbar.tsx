@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../NewContexts/UserContext';
 import { 
@@ -24,6 +24,113 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
   const { user, signOutUser } = useUser();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Inject gradient animation styles
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @property --hue1 {
+        syntax: "<number>";
+        inherits: false;
+        initial-value: 0;
+      }
+      
+      @property --hue2 {
+        syntax: "<number>";
+        inherits: false;
+        initial-value: 0;
+      }
+      
+      .gradient-sidebar {
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .gradient-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: 
+          linear-gradient(
+            135deg,
+            rgba(177, 116, 87, var(--hue1)),
+            rgba(74, 73, 71, 0.9)
+          ),
+          linear-gradient(
+            225deg,
+            rgba(219, 210, 194, var(--hue2)),
+            rgba(74, 73, 71, 0.8)
+          );
+        z-index: 0;
+        animation: gradientAnimation 8s ease infinite;
+      }
+      
+      @keyframes gradientAnimation {
+        0% {
+          --hue1: 0.05;
+          --hue2: 0.05;
+        }
+        50% {
+          --hue1: 0.2;
+          --hue2: 0.15;
+        }
+        100% {
+          --hue1: 0.05;
+          --hue2: 0.05;
+        }
+      }
+      
+      /* Bottom border animation for nav items */
+      .nav-item-link {
+        position: relative;
+      }
+      
+      .nav-item-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: #F9F7F0;
+        transition: width 0.3s ease, left 0.3s ease;
+      }
+      
+      .nav-item-link:hover::after {
+        width: 100%;
+        left: 0;
+      }
+      
+      .nav-item-active::after {
+        width: 100%;
+        left: 0;
+      }
+      
+      /* For browsers that don't support @property */
+      @supports not (animation-timeline: scroll()) {
+        .gradient-bg {
+          background: 
+            linear-gradient(
+              135deg,
+              rgba(177, 116, 87, 0.15),
+              rgba(74, 73, 71, 0.9)
+            ),
+            linear-gradient(
+              225deg,
+              rgba(219, 210, 194, 0.15),
+              rgba(74, 73, 71, 0.8)
+            );
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
 
   const menuItems = [
     { id: 'home', label: 'Home', icon: <FaHome size={20} />, onClick: () => navigate('/') },
@@ -51,15 +158,20 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
         {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
       </button>
 
-      {/* Sidebar */}
-      <div className={`bg-milk
+      {/* Sidebar with gradient */}
+      <div className={`
         fixed lg:static inset-y-0 left-0 z-40 w-64 transform 
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} 
         lg:translate-x-0 transition-transform duration-300 ease-in-out
+        gradient-sidebar
       `}>
-        <div className="flex flex-col h-full bg-graphite text-white">
+        {/* Gradient background */}
+        <div className="gradient-bg"></div>
+        
+        {/* Content above gradient */}
+        <div className="flex flex-col h-full relative z-10">
           {/* User Profile Section */}
-          <div className="p-6 border-b border-gray-700">
+          <div className="p-6 border-b border-gray-700/50">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center">
                 {user?.profileImage ? (
@@ -73,8 +185,8 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
                 )}
               </div>
               <div>
-                <h2 className="font-helvetica-regular text-lg">{user?.name || 'User'}</h2>
-                <p className="text-sm text-gray-400 font-helvetica-light">Property Lister</p>
+                <h2 className="font-helvetica-regular text-lg text-milk">{user?.name || 'User'}</h2>
+                <p className="text-sm text-milk/70 font-helvetica-light">Property Lister</p>
               </div>
             </div>
           </div>
@@ -90,11 +202,11 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
                       setIsMobileMenuOpen(false);
                     }}
                     className={`
-                      w-full px-4 py-3 rounded-xl flex items-center space-x-3
+                      nav-item-link w-full px-4 py-3 rounded-xl flex items-center space-x-3
                       font-helvetica-light transition-colors duration-200
                       ${activeTab === item.id ? 
-                        'bg-white/10 text-white' : 
-                        'text-gray-400 hover:bg-white/5 hover:text-white'}
+                        'text-milk nav-item-active' : 
+                        'text-milk/70 hover:text-milk'}
                     `}
                   >
                     {item.icon}
@@ -106,11 +218,11 @@ const NavBar: React.FC<NavBarProps> = ({ activeTab, setActiveTab }) => {
           </nav>
 
           {/* Sign Out Button */}
-          <div className="p-4 border-t border-gray-700">
+          <div className="p-4 border-t border-gray-700/50">
             <button
               onClick={handleSignOut}
-              className="w-full px-4 py-3 rounded-xl flex items-center space-x-3 
-                       text-gray-400 hover:bg-white/5 hover:text-white
+              className="nav-item-link w-full px-4 py-3 rounded-xl flex items-center space-x-3 
+                       text-milk/70 hover:text-milk
                        transition-colors duration-200 font-helvetica-light"
             >
               <FaSignOutAlt size={20} />
