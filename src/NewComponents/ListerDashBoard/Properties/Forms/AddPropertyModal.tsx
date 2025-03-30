@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BasicInfo } from './BasicInfo';
-
+import Loading from '../../../Errors/Loading';
 import { LocationSearch } from './LocationSearch';
 import { LocationConfirm } from './LocationConfirm';
 import { DetailedInfo } from './DetailedInfo';
@@ -9,8 +9,11 @@ import FinalStep from './FinalStep';
 import { propertyService } from '../../../../services/propertyService';
 import { NewPropertyFormData, AddPropertyModalProps } from '../propertyTypes';
 
+
 export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onClose, onPropertyAdded }) => {
   const [step, setStep] = useState(1);
+  const [loadingMessage, setLoadingMessage] = useState('Loading'); 
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<NewPropertyFormData>({
     propertyName: '',
     propertyType: 'Residential', // Set default value
@@ -53,30 +56,43 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   ];
 
   // In handleSubmit function in AddPropertyModal.tsx
-const handleSubmit = async () => {
-  try {
-    // If there are images in blob format, process them
-    let processedImages = formData.images || [];
-    
-    if (processedImages.some(img => img.startsWith('blob:'))) {
-      // Use the batch processing service for any blob URLs
-      processedImages = await propertyService.processBatchPropertyImages(processedImages);
+  const handleSubmit = async () => {
+    try {
+      // Show loading indicator
+      setLoading(true);
+      setLoadingMessage('Uploading property information...');
+      
+      // If there are images in blob format, process them
+      let processedImages = formData.images || [];
+      
+      if (processedImages.some(img => img.startsWith('blob:'))) {
+        setLoadingMessage('Processing images...');
+        // Use the batch processing service for any blob URLs
+        processedImages = await propertyService.processBatchPropertyImages(processedImages);
+      }
+      
+      // Create a submission-ready copy of the form data with processed images
+      const submissionData = {
+        ...formData,
+        images: processedImages
+      };
+      
+      setLoadingMessage('Saving property details...');
+      await propertyService.createProperty(submissionData);
+      
+      // Hide loading indicator
+      setLoading(false);
+      
+      onPropertyAdded();
+      onClose();
+    } catch (error) {
+      // Hide loading indicator on error
+      setLoading(false);
+      console.error('Error creating property:', error);
+      // Show an error message to the user
+      alert('There was an error creating the property. Please try again.');
     }
-    
-    // Create a submission-ready copy of the form data with processed images
-    const submissionData = {
-      ...formData,
-      images: processedImages
-    };
-    
-    await propertyService.createProperty(submissionData);
-    onPropertyAdded();
-    onClose();
-  } catch (error) {
-    console.error('Error creating property:', error);
-    // Show an error message to the user
-  }
-};
+  };
 
   const validateStep = (currentStep: number) => {
     switch (currentStep) {
@@ -182,6 +198,7 @@ const handleSubmit = async () => {
               </button>
             </div>
           </motion.div>
+          <Loading isOpen={loading} message={loadingMessage} />
         </motion.div>
       )}
     </AnimatePresence>
