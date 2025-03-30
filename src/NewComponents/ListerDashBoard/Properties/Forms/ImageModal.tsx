@@ -15,9 +15,14 @@ const ImageUploadModal: React.FC<ImageUploadModalProps> = ({ isOpen, onClose, on
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
   const [uploadErrors, setUploadErrors] = useState<{[key: string]: string}>({});
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
+    
+    // Clear previous errors
+    setUploadErrors({});
+    setGlobalError(null);
     
     // Validate file sizes and types
     const validFiles: File[] = [];
@@ -64,101 +69,89 @@ const ImageUploadModal: React.FC<ImageUploadModalProps> = ({ isOpen, onClose, on
     setPreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  // In handleUpload function in ImageModal.tsx
-// Update handleUpload in ImageModal.tsx
-const handleUpload = async () => {
-  if (selectedFiles.length === 0) return;
-  
-  setUploading(true);
-  setUploadErrors({});
-  
-  try {
-    // Keep track of successful uploads and failures
-    const uploadedUrls: string[] = [];
-    const failedFiles: string[] = [];
+  // Improved handleUpload with better error handling
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return;
     
-    // Process files sequentially to avoid overwhelming the server
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
+    setUploading(true);
+    setUploadErrors({});
+    setGlobalError(null);
+    
+    try {
+      // Track successful uploads
+      const uploadedUrls: string[] = [];
+      const failedFiles: string[] = [];
       
-      try {
-        // Update progress to show we're starting
-        setUploadProgress(prev => ({...prev, [file.name]: 10}));
+      // Process files sequentially to avoid overwhelming the server
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
         
-        // First attempt: Create a blob URL (this is a guaranteed local fallback)
-        const localUrl = URL.createObjectURL(file);
-        
-        // Set intermediate progress
-        setUploadProgress(prev => ({...prev, [file.name]: 50}));
-        
-        // Attempt to upload to server with uploadImageToGCS
         try {
-          const fileUrl = await uploadImageToGCS(file);
+          // Set starting progress
+          setUploadProgress(prev => ({...prev, [file.name]: 10}));
           
-          // Add the remote URL to our successful uploads
-          if (fileUrl && !fileUrl.startsWith('blob:')) {
-            uploadedUrls.push(fileUrl);
-            setUploadProgress(prev => ({...prev, [file.name]: 100}));
-          } else {
-            // If we got back a blob URL, use our own local one
-            uploadedUrls.push(localUrl);
-            // Add to failed list for reporting
+          // Set intermediate progress during upload
+          setUploadProgress(prev => ({...prev, [file.name]: 50}));
+          
+          // Attempt to upload to GCS
+          try {
+            console.log(`Uploading file: ${file.name}`);
+            const fileUrl = await uploadImageToGCS(file);
+            
+            if (fileUrl) {
+              console.log(`Successfully uploaded: ${file.name} -> ${fileUrl}`);
+              uploadedUrls.push(fileUrl);
+              setUploadProgress(prev => ({...prev, [file.name]: 100}));
+            } else {
+              throw new Error('Upload returned empty URL');
+            }
+          } catch (uploadError) {
+            console.error(`Upload error for ${file.name}:`, uploadError);
             failedFiles.push(file.name);
+            
+            setUploadErrors(prev => ({
+              ...prev,
+              [file.name]: uploadError instanceof Error ? uploadError.message : 'Upload failed'
+            }));
+            
             setUploadProgress(prev => ({...prev, [file.name]: 100}));
           }
-        } catch (uploadError) {
-          console.error(`Upload error for ${file.name}:`, uploadError);
-          
-          // Use the local URL as fallback
-          uploadedUrls.push(localUrl);
+        } catch (fileError) {
+          console.error(`Error processing file ${file.name}:`, fileError);
           failedFiles.push(file.name);
-          
-          // Set error but don't interrupt the process
           setUploadErrors(prev => ({
             ...prev,
-            [file.name]: uploadError instanceof Error ? uploadError.message : 'Upload failed'
+            [file.name]: fileError instanceof Error ? fileError.message : 'Processing failed'
           }));
-          
-          setUploadProgress(prev => ({...prev, [file.name]: 100}));
         }
-      } catch (fileError) {
-        console.error(`Error processing file ${file.name}:`, fileError);
-        failedFiles.push(file.name);
-        setUploadErrors(prev => ({
-          ...prev,
-          [file.name]: fileError instanceof Error ? fileError.message : 'Processing failed'
-        }));
-      }
-    }
-    
-    // If we have any successful uploads, return them
-    if (uploadedUrls.length > 0) {
-      // If some failed but others succeeded, show a warning
-      if (failedFiles.length > 0) {
-        setUploadErrors(prev => ({
-          ...prev,
-          general: `${failedFiles.length} file(s) couldn't be uploaded to the server but will be shown locally. The property will still be created.`
-        }));
-        
-        // Wait a moment to show the message
-        await new Promise(resolve => setTimeout(resolve, 2000));
       }
       
-      onUpload(uploadedUrls);
-      onClose();
-    } else {
-      throw new Error('All uploads failed');
+      // If we have any successful uploads, return them
+      if (uploadedUrls.length > 0) {
+        // If some files failed, show a warning but continue
+        if (failedFiles.length > 0) {
+          setUploadErrors(prev => ({
+            ...prev,
+            general: `${failedFiles.length} file(s) failed to upload. Only successfully uploaded images will be attached to the property.`
+          }));
+          
+          // Wait a moment to show the message
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        console.log(`Successfully uploaded ${uploadedUrls.length} images, returning URLs`);
+        onUpload(uploadedUrls);
+        onClose();
+      } else {
+        setGlobalError('No images were successfully uploaded. Please try again.');
+      }
+    } catch (error) {
+      console.error('Upload process failed:', error);
+      setGlobalError('Upload process failed. Please try again or contact support if the problem persists.');
+    } finally {
+      setUploading(false);
     }
-  } catch (error) {
-    console.error('Upload process failed:', error);
-    setUploadErrors(prev => ({
-      ...prev,
-      general: 'Upload process failed. Please try again or contact support if the problem persists.'
-    }));
-  } finally {
-    setUploading(false);
-  }
-};
+  };
 
   return (
     <AnimatePresence>
@@ -181,6 +174,13 @@ const handleUpload = async () => {
             </div>
 
             <div className="space-y-4">
+              {globalError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg flex items-start">
+                  <FaExclamationTriangle className="text-red-500 mt-1 mr-2 flex-shrink-0" />
+                  <span>{globalError}</span>
+                </div>
+              )}
+
               <div
                 className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
                 onDragOver={(e) => e.preventDefault()}
@@ -216,8 +216,8 @@ const handleUpload = async () => {
               </div>
 
               {uploadErrors.general && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-lg flex items-start">
-                  <FaExclamationTriangle className="text-red-500 mt-1 mr-2 flex-shrink-0" />
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 p-3 rounded-lg flex items-start">
+                  <FaExclamationTriangle className="text-yellow-500 mt-1 mr-2 flex-shrink-0" />
                   <span>{uploadErrors.general}</span>
                 </div>
               )}

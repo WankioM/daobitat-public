@@ -24,19 +24,19 @@ const FeaturedProperties = () => {
       img: "https://i.pinimg.com/736x/6c/8c/40/6c8c407f2137453a2862b4fc13ba6db9.jpg",
       title: "Modern Beachfront Villa",
       price: "49900",
-      location: "Bali, Indonesia"
+      location: "Watamu, Kenya"
     },
     {
       img: "https://i.pinimg.com/736x/c2/e3/e6/c2e3e6e0cb1ac12673adc1ae179785aa.jpg",
       title: "Luxury Mountain Retreat",
       price: "39900",
-      location: "Aspen, USA"
+      location: "Nanyuki, Kenya"
     },
     {
       img: "https://i.pinimg.com/736x/ec/37/0b/ec370bfb3649a826a95019534608690a.jpg",
       title: "Contemporary City Penthouse",
       price: "59900",
-      location: "Kilimani"
+      location: "Mtwapa, Kenya"
     },
     {
       img: "https://town-n-country-living.com/wp-content/uploads/2023/10/rustic-porch.jpg",

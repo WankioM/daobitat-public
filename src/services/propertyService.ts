@@ -1,4 +1,5 @@
 import api from './api';
+import { uploadImageToGCS } from './imageUpload';
 
 // Type definitions for better type safety
 interface Coordinates {
@@ -49,6 +50,7 @@ interface PropertyData {
   rooms?: number;
   cryptoAccepted?: boolean;
   images?: string[];
+  termsAccepted?: boolean;
 }
 
 interface CoOwnershipData {
@@ -145,118 +147,13 @@ export const propertyService = {
       features: propertyData.features || []
     };
 
-    // In propertyService.ts
-
+    // Process images if present - use processBatchPropertyImages to handle them
     if (propertyData.images?.length) {
       try {
-        // Process each image one at a time to avoid overwhelming the server
-        const uploadedImages = [];
-        
-        for (const imageUrl of propertyData.images) {
-          try {
-            // Skip already uploaded images (ones that aren't blob URLs)
-            if (!imageUrl.startsWith('blob:')) {
-              uploadedImages.push(imageUrl);
-              continue;
-            }
-            
-            // Fetch the blob data
-            const response = await fetch(imageUrl);
-            const blob = await response.blob();
-            
-            // Generate a unique filename
-            const timestamp = Date.now();
-            const randomSuffix = Math.floor(Math.random() * 10000);
-            const extension = blob.type.split('/')[1] || 'jpg';
-            const fileName = `propertyimages/${timestamp}-${randomSuffix}.${extension}`;
-            
-            console.log(`Processing image: ${fileName}`);
-            
-            // Get signed URL - with retry mechanism
-            const MAX_RETRIES = 3;
-            let retryCount = 0;
-            let uploadUrl = null;
-            let fileUrl = null;
-            
-            while (retryCount < MAX_RETRIES && !uploadUrl) {
-              try {
-                const { data } = await api.post('/api/upload-url', {
-                  fileName,
-                  fileType: blob.type
-                });
-                
-                if (data && data.data) {
-                  uploadUrl = data.data.signedUrl;
-                  fileUrl = data.data.fileUrl;
-                  console.log(`Got signed URL on attempt ${retryCount + 1}`);
-                } else {
-                  throw new Error('Invalid response format from upload-url endpoint');
-                }
-              } catch (urlError) {
-                retryCount++;
-                console.error(`Failed to get signed URL (attempt ${retryCount}):`, urlError);
-                if (retryCount >= MAX_RETRIES) throw urlError;
-                await new Promise(r => setTimeout(r, 1000 * retryCount)); // Exponential backoff
-              }
-            }
-            
-            if (!uploadUrl || !fileUrl) {
-              throw new Error('Failed to get upload URL after multiple attempts');
-            }
-            
-            // Upload the file with retry mechanism
-            retryCount = 0;
-            let uploadSuccess = false;
-            
-            while (retryCount < MAX_RETRIES && !uploadSuccess) {
-              try {
-                const uploadResponse = await fetch(uploadUrl, {
-                  method: 'PUT',
-                  body: blob,
-                  headers: { 'Content-Type': blob.type }
-                });
-                
-                if (uploadResponse.ok) {
-                  uploadSuccess = true;
-                  console.log(`Uploaded file successfully on attempt ${retryCount + 1}`);
-                } else {
-                  throw new Error(`Upload failed with status: ${uploadResponse.status}`);
-                }
-              } catch (uploadError) {
-                retryCount++;
-                console.error(`Upload attempt ${retryCount} failed:`, uploadError);
-                if (retryCount >= MAX_RETRIES) throw uploadError;
-                await new Promise(r => setTimeout(r, 1000 * retryCount)); // Exponential backoff
-              }
-            }
-            
-            // Try to make file public - but don't fail if this doesn't work
-            try {
-              await api.post('/api/make-public', { fileName });
-              console.log(`Made file public: ${fileName}`);
-            } catch (publicError) {
-              console.warn('Could not make file public, using signed URL instead:', publicError);
-              // Continue anyway - we'll use the signed URL
-            }
-            
-            // Use a public URL format which should work if the file was made public
-            const publicUrl = `https://storage.googleapis.com/web-vids/${fileName}`;
-            
-            // Add the best available URL to our results
-            uploadedImages.push(fileUrl || publicUrl);
-            
-          } catch (singleImageError) {
-            console.error('Failed to process individual image:', singleImageError);
-            // Skip this image but continue processing others
-          }
-        }
+        const processedImages = await propertyService.processBatchPropertyImages(propertyData.images);
         
         // Update the property data with successfully uploaded images
-        if (uploadedImages.length > 0) {
-          defaultedData.images = uploadedImages;
-        } else {
-          defaultedData.images = [];
-        }
+        defaultedData.images = processedImages;
       } catch (error) {
         console.error('Failed to process images:', error);
         // Continue with property creation even if all images fail
@@ -303,76 +200,82 @@ export const propertyService = {
     return response.data;
   },
 
-  // Update existing uploadPropertyImage method
-// Update this in propertyService.ts
-uploadPropertyImage: async (imageUrl: string): Promise<string | null> => {
-  try {
-    if (!imageUrl.startsWith('blob:')) {
-      // Already a remote URL, just return it
-      return imageUrl;
-    }
-    
-    console.log('Processing blob URL for upload');
-    
-    // Fetch the blob data
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    
-    // Generate a unique filename
-    const timestamp = Date.now();
-    const randomSuffix = Math.floor(Math.random() * 10000);
-    const extension = blob.type.split('/')[1] || 'jpg';
-    const fileName = `propertyimages/${timestamp}-${randomSuffix}.${extension}`;
-    
-    console.log(`Attempting to upload image as: ${fileName}`);
-    
-    // Get a signed URL
-    const uploadUrlResponse = await api.post('/api/upload-url', {
-      fileName,
-      fileType: blob.type
-    });
-    
-    console.log('Got upload URL response:', uploadUrlResponse.status);
-    
-    const signedUrl = uploadUrlResponse.data.data.signedUrl;
-    const fileUrl = uploadUrlResponse.data.data.fileUrl || uploadUrlResponse.data.data.publicUrl;
-    
-    console.log('Proceeding with upload to signed URL');
-    
-    // Upload the image
-    const uploadResult = await fetch(signedUrl, {
-      method: 'PUT',
-      body: blob,
-      headers: { 'Content-Type': blob.type }
-    });
-    
-    if (!uploadResult.ok) {
-      throw new Error(`Upload failed with status: ${uploadResult.status}`);
-    }
-    
-    console.log('Image uploaded successfully to GCS');
-    
-    // Try to make the file public
+  // Simplified uploadPropertyImage method
+  uploadPropertyImage: async (imageUrl: string): Promise<string | null> => {
     try {
-      await api.post('/api/make-public', { fileName });
-      console.log('File made public successfully');
-    } catch (publicError) {
-      console.warn('Could not make file public, using signed URL');
-      // Continue anyway
+      if (!imageUrl.startsWith('blob:')) {
+        // Already a remote URL, just return it
+        return imageUrl;
+      }
+      
+      console.log('Processing blob URL for upload');
+      
+      // Fetch the blob data
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Upload using the uploadImageToGCS function from imageUpload.ts
+      const cloudUrl = await uploadImageToGCS(blob);
+      
+      console.log('Image uploaded successfully to GCS:', cloudUrl);
+      return cloudUrl;
+    } catch (error) {
+      console.error('Error in uploadPropertyImage:', error);
+      return null; // Return null on failure - no local fallbacks
     }
+  },
 
-    // Use the URL provided by the API response
-    console.log('Using URL:', fileUrl);
-    return fileUrl;
-  } catch (error) {
-    console.error('Error in uploadPropertyImage:', error);
+  // Simplified batch processing
+  processBatchPropertyImages: async (images: string[]): Promise<string[]> => {
+    if (!images?.length) {
+      return [];
+    }
     
-    // In a real failure, return the original blob URL as fallback
-    // This at least lets users see their images locally
-    return imageUrl;
-  }
-},
-
+    try {
+      const uploadedImages: string[] = [];
+      
+      // Process at most 3 images at a time to prevent overwhelming the server
+      const imageBatches: string[][] = [];
+      for (let i = 0; i < images.length; i += 3) {
+        imageBatches.push(images.slice(i, i + 3));
+      }
+      
+      for (const batch of imageBatches) {
+        console.log(`Processing batch of ${batch.length} images...`);
+        
+        // Process each batch in parallel
+        const batchResults = await Promise.all(
+          batch.map(async (imageUrl) => {
+            try {
+              // Skip already uploaded images
+              if (!imageUrl.startsWith('blob:')) {
+                return imageUrl;
+              }
+              
+              // Try to upload the image
+              return await propertyService.uploadPropertyImage(imageUrl);
+            } catch (err) {
+              console.error(`Error uploading image:`, err);
+              return null;
+            }
+          })
+        );
+        
+        // Add only successful uploads to the results (filter out nulls)
+        uploadedImages.push(...batchResults.filter(url => url !== null) as string[]);
+        
+        // Wait a bit between batches to avoid overloading the server
+        if (imageBatches.length > 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      return uploadedImages;
+    } catch (error) {
+      console.error('Error processing property images:', error);
+      return [];
+    }
+  },
 
   makePropertyImagePublic: async (fileName: string) => {
     const response = await api.post('/api/properties/images/public', { fileName });
@@ -491,120 +394,10 @@ uploadPropertyImage: async (imageUrl: string): Promise<string | null> => {
     const response = await api.get('/api/properties/advanced-search', { params });
     return response.data;
   },
+
+  // Kept for compatibility but simplified
   uploadSinglePropertyImage: async (imageUrl: string): Promise<string | null> => {
-    try {
-      if (!imageUrl.startsWith('blob:')) {
-        // Already a remote URL, just return it
-        return imageUrl;
-      }
-      
-      // Fetch the blob data
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Generate a unique filename
-      const timestamp = Date.now();
-      const randomSuffix = Math.floor(Math.random() * 10000);
-      const extension = blob.type.split('/')[1] || 'jpg';
-      const fileName = `propertyimages/${timestamp}-${randomSuffix}.${extension}`;
-      
-      console.log(`Uploading image: ${fileName}`);
-      
-      // SIMPLE DIRECT APPROACH - minimize potential points of failure
-      try {
-        // Step 1: Get a signed URL (simplest request possible)
-        const uploadUrlResponse = await api.post('/api/upload-url', {
-          fileName,
-          fileType: blob.type
-        });
-        
-        const signedUrl = uploadUrlResponse.data.data.signedUrl;
-        const fileUrl = uploadUrlResponse.data.data.publicUrl || uploadUrlResponse.data.data.fileUrl;
-        
-        // Step 2: Upload the image directly
-        const uploadResult = await fetch(signedUrl, {
-          method: 'PUT',
-          body: blob,
-          headers: { 'Content-Type': blob.type }
-        });
-        
-        if (!uploadResult.ok) {
-          throw new Error(`Upload failed with status: ${uploadResult.status}`);
-        }
-        
-        console.log('Image uploaded successfully');
-        
-        // Step 3: Explicitly make the file public to ensure it's accessible
-        try {
-          await api.post('/api/make-public', { fileName });
-          console.log('Image made public successfully');
-        } catch (publicError) {
-          console.warn('Could not make file public, using signed URL instead:', publicError);
-          // Continue anyway - we'll use the URL we already have
-        }
-        
-        return fileUrl;
-      } catch (error) {
-        console.error('Failed to upload image:', error);
-        // In this case, return null instead of a local URL
-        // so that the property creation knows this image failed
-        return null;
-      }
-    } catch (error) {
-      console.error('Error in uploadPropertyImage:', error);
-      return null;
-    }
-  },
-  
-  processBatchPropertyImages:  async (images: string[]): Promise<string[]> => {
-    if (!images?.length) {
-      return [];
-    }
-    
-    try {
-      const uploadedImages: string[] = [];
-      
-      // Process at most 3 images at a time to prevent overwhelming the server
-      const imageBatches: string[][] = [];
-      for (let i = 0; i < images.length; i += 3) {
-        imageBatches.push(images.slice(i, i + 3));
-      }
-      
-      for (const batch of imageBatches) {
-        console.log(`Processing batch of ${batch.length} images...`);
-        
-        // Process each batch in parallel
-        const batchResults = await Promise.all(
-          batch.map(async (imageUrl) => {
-            // Try up to 2 times for each image
-            for (let attempt = 1; attempt <= 2; attempt++) {
-              try {
-                const result = await propertyService.uploadPropertyImage(imageUrl);
-                if (result) return result;
-                console.log(`Attempt ${attempt} failed, ${attempt < 2 ? 'retrying...' : 'giving up'}`);
-              } catch (err) {
-                console.error(`Error in attempt ${attempt}:`, err);
-              }
-            }
-            return null; // Return null if all attempts failed
-          })
-        );
-        
-        // Add successful uploads to the results
-        for (const url of batchResults) {
-          if (url) uploadedImages.push(url);
-        }
-        
-        // Wait a bit between batches to avoid overloading the server
-        if (imageBatches.length > 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-      
-      return uploadedImages;
-    } catch (error) {
-      console.error('Error processing property images:', error);
-      return [];
-    }
+    // Just call the standard uploadPropertyImage method
+    return propertyService.uploadPropertyImage(imageUrl);
   }
 };

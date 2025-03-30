@@ -28,123 +28,87 @@ const withRetry = async <T>(
 };
 
 /**
- * Check if a URL is accessible by attempting to fetch headers
+ * Uploads an image directly to the server instead of using signed URLs
+ * This avoids CORS issues with direct GCS uploads
+ * @param file Either a File object or a Blob
  */
-const isUrlAccessible = async (url: string): Promise<boolean> => {
+export const uploadImageToGCS = async (file: File | Blob): Promise<string> => {
   try {
-    const response = await fetch(url, { method: 'HEAD' });
-    return response.ok;
-  } catch (error) {
-    console.warn(`URL not accessible: ${url}`, error);
-    return false;
-  }
-};
-
-/**
- * Uploads an image to Google Cloud Storage and returns the best available URL
- */
-export const uploadImageToGCS = async (file: File): Promise<string> => {
-  try {
-    // Generate a timestamp and sanitize filename
+    // Generate a filename
     const timestamp = Date.now();
-    const sanitizedFileName = sanitizeFileName(file.name);
-    const fileName = `${FOLDER_NAME}/${timestamp}-${sanitizedFileName}`;
+    const randomSuffix = Math.floor(Math.random() * 10000);
+    const extension = file.type.split('/')[1] || 'jpg';
+    const fileName = `${FOLDER_NAME}/${timestamp}-${randomSuffix}.${extension}`;
     
     console.log(`Starting upload for file: ${fileName}`);
     
-    // Step 1: Get signed URL with retry mechanism
-    const { data: { data } } = await withRetry(
-      () => api.post('/api/upload-url', {
-        fileName,
-        fileType: file.type,
-        skipMakePublic: false // Try to make public, but have fallback
-      }),
-      3
-    );
+    // Step 1: Create a FormData object to send the file directly to our backend
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('fileName', fileName);
+    formData.append('fileType', file.type);
     
-    // Extract URLs from response
-    const { signedUrl, fileUrl, publicUrl } = data;
-    
-    console.log(`Obtained signed URL: ${signedUrl.substring(0, 100)}...`);
-    
-    // Step 2: Upload to GCS using signed URL with retry mechanism
-    await withRetry(
-      () => fetch(signedUrl, {
-        method: 'PUT',
-        body: file,
+    // Step 2: Use our backend as a proxy to upload to GCS
+    // Create a new endpoint in your Express backend for this
+    const uploadResponse = await withRetry(
+      () => api.post('/api/direct-upload', formData, {
         headers: {
-          'Content-Type': file.type
-        }
+          'Content-Type': 'multipart/form-data',
+        },
       }),
       3
     );
     
-    console.log(`File uploaded successfully to GCS`);
-    
-    // Step 3: Try to use the public URL first, then fall back to signed URL
-    // This helps us use the best available URL type
-    try {
-      // Check if the public URL is accessible (it should be if makePublic worked)
-      if (publicUrl && await isUrlAccessible(publicUrl)) {
-        console.log(`Using public URL: ${publicUrl}`);
-        return publicUrl;
-      }
-      
-      // If public URL isn't accessible, use the signed URL
-      console.log(`Using signed URL: ${fileUrl.substring(0, 50)}...`);
-      return fileUrl;
-    } catch (error) {
-      console.error('Error checking URL accessibility:', error);
-      
-      // Return whatever URL we have
-      return fileUrl || publicUrl;
+    if (!uploadResponse?.data?.data?.publicUrl) {
+      throw new Error('Failed to get valid upload response');
     }
+    
+    const { publicUrl } = uploadResponse.data.data;
+    
+    console.log(`File uploaded successfully to GCS: ${publicUrl}`);
+    
+    return publicUrl;
   } catch (error) {
     console.error('Error in uploadImageToGCS:', error);
-    
-    // Return a fallback local URL if upload completely fails
-    if (file) {
-      const localUrl = URL.createObjectURL(file);
-      console.log(`Returning local URL as fallback: ${localUrl}`);
-      return localUrl;
-    }
-    
-    throw new Error('Image upload failed and no fallback available');
+    throw error; // Let the caller handle this
   }
 };
 
-/**
- * Alternate implementation that uses local storage as a fallback
- * This ensures images remain visible even after page refresh
- */
-export const uploadImageWithLocalFallback = async (file: File): Promise<string> => {
+// FALLBACK METHOD: If we can't implement a direct upload endpoint
+export const uploadImageFallback = async (file: File | Blob): Promise<string> => {
   try {
-    // First try to upload to GCS
-    return await uploadImageToGCS(file);
-  } catch (error) {
-    console.error('GCS upload failed, using local storage fallback:', error);
+    // Convert the file to base64
+    const base64Data = await fileToBase64(file);
     
-    // Store in localStorage as base64
-    const base64 = await fileToBase64(file);
-    const storageKey = `property_image_${Date.now()}`;
+    // Send the base64 data to the backend
+    const uploadResponse = await api.post('/api/base64-upload', {
+      fileName: `${FOLDER_NAME}/${Date.now()}-${Math.floor(Math.random() * 10000)}.${file.type.split('/')[1] || 'jpg'}`,
+      fileType: file.type,
+      base64Data: base64Data
+    });
     
-    try {
-      localStorage.setItem(storageKey, base64);
-      return base64;
-    } catch (storageError) {
-      console.error('LocalStorage fallback failed:', storageError);
-      // Last resort - return object URL
-      return URL.createObjectURL(file);
+    if (!uploadResponse?.data?.data?.publicUrl) {
+      throw new Error('Failed to get valid upload response');
     }
+    
+    return uploadResponse.data.data.publicUrl;
+  } catch (error) {
+    console.error('Error in uploadImageFallback:', error);
+    throw error;
   }
 };
 
 // Helper to convert File to base64
-const fileToBase64 = (file: File): Promise<string> => {
+const fileToBase64 = (file: File | Blob): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      // Remove the data URL prefix (e.g., "data:image/jpeg;base64,")
+      const base64Data = base64.substring(base64.indexOf(',') + 1);
+      resolve(base64Data);
+    };
     reader.onerror = error => reject(error);
   });
 };

@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaChevronLeft, FaChevronRight, FaTrash, FaPlus, FaSpinner } from 'react-icons/fa';
+import { uploadImageToGCS } from '../../../services/imageUpload';
+import Loading from '../../Errors/Loading';
 
 interface ImageCarouselProps {
   images: string[];
@@ -31,36 +33,55 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || !onImagesChange) return;
-
+  
     setIsLoading(true);
     const newImages: string[] = [];
-
+    const progress: { [key: string]: number } = {};
+  
     try {
-      // Process each file with a simulated upload progress
+      // Process each file with real upload
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const fileId = `${Date.now()}-${i}`;
-
+        
+        // Set initial progress
+        progress[fileId] = 0;
+        setUploadProgress(prev => ({...prev, ...progress}));
+        
         // Create a temporary URL for preview
         const previewUrl = URL.createObjectURL(file);
         newImages.push(previewUrl);
-
-        // Simulate upload progress
-        for (let progress = 0; progress <= 100; progress += 10) {
-          setUploadProgress(prev => ({
-            ...prev,
-            [fileId]: progress
-          }));
-          await new Promise(resolve => setTimeout(resolve, 100)); // Simulate network delay
+        
+        try {
+          // Update progress to show we're starting
+          progress[fileId] = 10;
+          setUploadProgress(prev => ({...prev, ...progress}));
+          
+          // Actual upload using the service
+          const uploadedUrl = await uploadImageToGCS(file);
+          
+          // Update to completed
+          progress[fileId] = 100;
+          setUploadProgress(prev => ({...prev, ...progress}));
+          
+          // Replace the temporary URL with the cloud URL
+          const index = newImages.indexOf(previewUrl);
+          if (index !== -1) {
+            newImages[index] = uploadedUrl;
+          }
+        } catch (error) {
+          console.error(`Error uploading image ${i}:`, error);
+          // Keep preview URL if upload fails
+          progress[fileId] = 100; // Mark as complete
+          setUploadProgress(prev => ({...prev, ...progress}));
         }
       }
-
+  
       onImagesChange([...images, ...newImages]);
     } catch (error) {
       console.error('Error uploading images:', error);
     } finally {
       setIsLoading(false);
-      setUploadProgress({});
     }
   };
 
@@ -169,25 +190,7 @@ const ImageCarousel: React.FC<ImageCarouselProps> = ({
       )}
 
       {isLoading && Object.keys(uploadProgress).length > 0 && (
-        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="bg-white p-4 rounded-lg shadow-lg w-64">
-            <div className="text-center mb-2">Uploading Images...</div>
-            {Object.entries(uploadProgress).map(([fileId, progress]) => (
-              <div key={fileId} className="space-y-1">
-                <div className="flex justify-between text-sm">
-                  <span>Image {parseInt(fileId.split('-')[1]) + 1}</span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-celadon h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Loading isOpen={isLoading} message="Uploading images..." />
       )}
 
       {images.length > 1 && !isLoading && (

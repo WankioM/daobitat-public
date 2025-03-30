@@ -94,6 +94,35 @@ const PropertyFocus: React.FC<PropertyFocusProps> = ({
 
   if (!isOpen) return null;
 
+  // Add this function in PropertyFocus.tsx after handleLocationChange
+const handleImagesChange = async (updatedImages: string[]) => {
+  // Filter out new images (those with blob: urls)
+  const newImages = updatedImages.filter(img => img.startsWith('blob:'));
+  const existingImages = updatedImages.filter(img => !img.startsWith('blob:'));
+  
+  if (newImages.length > 0) {
+    try {
+      // Process new images through the propertyService
+      const uploadedImages = await propertyService.processBatchPropertyImages(newImages);
+      
+      // Update edited property with all images
+      setEditedProperty(prev => ({
+        ...prev,
+        images: [...existingImages, ...uploadedImages.filter(url => url !== null)]
+      }));
+    } catch (error) {
+      console.error('Error processing images:', error);
+      setError('Failed to upload one or more images. Please try again.');
+    }
+  } else {
+    // Just update with the existing images
+    setEditedProperty(prev => ({
+      ...prev,
+      images: updatedImages
+    }));
+  }
+};
+
   return (
     <motion.div
       className="fixed inset-0  bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto"

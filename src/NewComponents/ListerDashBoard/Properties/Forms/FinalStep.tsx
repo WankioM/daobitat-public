@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaHome, FaMapMarkerAlt, FaBed, FaSwimmingPool, FaCreditCard, FaImage, FaPlus } from 'react-icons/fa';
+import {  FaCreditCard, FaPlus } from 'react-icons/fa';
 import { StepProps } from '../propertyTypes';
 import ImageUploadModal from './ImageModal';
 import TermsPopup from './TermsPopUp';
 import { uploadImageToGCS } from '../../../../services/imageUpload';
+import ErrorProperty from '../../../Errors/ErrorProperty';
 
 const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -20,20 +21,42 @@ interface ImageUploadModalProps {
 const FinalStep: React.FC<StepProps> = ({ formData, setFormData }) => {
     const [isUploadModalOpen, setIsUploadModalOpen] = React.useState(false);
     const [isTermsOpen, setIsTermsOpen] = React.useState(false);
+    const [imageError, setImageError] = useState<string | null>(null);
+    const [termsError, setTermsError] = useState<string | null>(null);
 
-    const handleImagesUpload = (newImages: string[]) => {
-        setFormData({
-            ...formData,
-            images: [...(formData.images || []), ...newImages]
-        });
-    };
+        const handleImagesUpload = (newImages: string[]) => {
+            // Clear any previous errors
+            setImageError(null);
+            
+            if (newImages.length === 0) {
+                setImageError("No images were uploaded. Please try again.");
+                return;
+            }
+            
+            setFormData({
+                ...formData,
+                images: [...(formData.images || []), ...newImages]
+            });
+        };
 
-    const handleRemoveImage = (indexToRemove: number) => {
-        setFormData({
-            ...formData,
-            images: (formData.images || []).filter((_, index) => index !== indexToRemove)
-        });
-    };
+        const handleRemoveImage = (indexToRemove: number) => {
+            setFormData({
+                ...formData,
+                images: (formData.images || []).filter((_, index) => index !== indexToRemove)
+            });
+        };
+
+        const handleTermsAcceptedChange = (accepted: boolean) => {
+            // Clear terms error when user checks the box
+            if (accepted) {
+                setTermsError(null);
+            }
+            
+            setFormData({
+                ...formData,
+                termsAccepted: accepted
+            });
+        };
 
     return (
         <motion.div 
@@ -45,6 +68,22 @@ const FinalStep: React.FC<StepProps> = ({ formData, setFormData }) => {
             {/* Images Section */}
             <div className="space-y-2">
                 <label className="font-helvetica-regular text-slategray block mb-2">Property Images</label>
+
+                {imageError && (
+                    <div className="mb-4">
+                        <ErrorProperty 
+                            message={imageError} 
+                            type="missingfields" 
+                            actionLabel="Add Images"
+                            onAction={() => {
+                            setImageError(null);
+                            setIsUploadModalOpen(true);
+                            }}
+                            mode="toast"
+                        />
+                    </div>
+                )}
+
                 <div className="grid grid-cols-4 gap-4">
                     {(formData.images || []).map((image, index) => (
                         <div key={index} className="relative group">
@@ -94,12 +133,29 @@ const FinalStep: React.FC<StepProps> = ({ formData, setFormData }) => {
                     <span className="font-helvetica-light text-slategray">Accept Cryptocurrency</span>
                 </label>
 
+                    {termsError && (
+                    <div className="my-3">
+                        <ErrorProperty 
+                            message={termsError} 
+                            type="missingfields" 
+                            actionLabel="Read Terms"
+                            onAction={() => {
+                            setTermsError(null);
+                            setIsTermsOpen(true);
+                            }}
+                            mode="toast"
+                        />
+                    </div>
+                )}
+
+                <div className="flex items-center justify-between">
                     <button
                         onClick={() => setIsTermsOpen(true)}
-                        className="text-licorice hover:underline text-sm"
+                        className="text-rustyred hover:underline text-sm font-helvetica-light"
                     >
                         Read terms and conditions
                     </button>
+                </div>
 
                 <label className="flex items-center space-x-2">
                     <input

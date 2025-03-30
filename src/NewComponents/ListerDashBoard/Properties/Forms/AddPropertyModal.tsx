@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BasicInfo } from './BasicInfo';
 import Loading from '../../../Errors/Loading';
+import ErrorProperty from '../../../Errors/ErrorProperty';
 import { LocationSearch } from './LocationSearch';
 import { LocationConfirm } from './LocationConfirm';
 import { DetailedInfo } from './DetailedInfo';
@@ -14,6 +15,10 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   const [step, setStep] = useState(1);
   const [loadingMessage, setLoadingMessage] = useState('Loading'); 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [errorType, setErrorType] = useState<'missingfields' | '404' | '500' | 'under-construction'>('missingfields');
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [formData, setFormData] = useState<NewPropertyFormData>({
     propertyName: '',
     propertyType: 'Residential', // Set default value
@@ -58,6 +63,12 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
   // In handleSubmit function in AddPropertyModal.tsx
   const handleSubmit = async () => {
     try {
+
+      setValidationError(null);
+      setSubmissionError(null);
+
+      
+
       // Show loading indicator
       setLoading(true);
       setLoadingMessage('Uploading property information...');
@@ -89,8 +100,11 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
       // Hide loading indicator on error
       setLoading(false);
       console.error('Error creating property:', error);
-      // Show an error message to the user
-      alert('There was an error creating the property. Please try again.');
+      const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'There was an unexpected error creating the property. Please try again.';
+    
+    setSubmissionError(errorMessage);
     }
   };
 
@@ -134,6 +148,17 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
     }
   };
 
+  const handleFixValidationError = () => {
+    // Focus on the relevant field based on the current step
+    setValidationError(null);
+    
+    // For example, focus on the first input field
+    const firstInput = document.querySelector('input, select, textarea') as HTMLElement;
+    if (firstInput) {
+      firstInput.focus();
+    }
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -166,6 +191,33 @@ export const AddPropertyModal: React.FC<AddPropertyModalProps> = ({ isOpen, onCl
                 ))}
               </div>
             </div>
+
+            {/* Display validation error */}
+            {validationError && (
+              <div className="mb-4">
+                <ErrorProperty 
+                  message={validationError}
+                  type="missingfields" 
+                  actionLabel="Fix"
+                  onAction={handleFixValidationError}
+                  mode="toast"
+                  autoHideDuration={7000}
+                />
+              </div>
+            )}
+
+            {/* Display submission error */}
+            {submissionError && (
+              <div className="mb-4">
+                 <ErrorProperty 
+                  message={submissionError}
+                  type="500" 
+                  actionLabel="Try Again"
+                  onAction={() => setSubmissionError(null)}
+                  mode="toast"
+                />
+              </div>
+            )}
 
             <div className="overflow-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
               {React.createElement(steps[step - 1].component, { formData, setFormData })}

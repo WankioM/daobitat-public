@@ -3,6 +3,7 @@ import React from 'react';
 import { FaBed, FaBath, FaRuler } from 'react-icons/fa';
 import { Property } from './propertyTypes';
 
+
 interface PropertyDetailsSectionProps {
   property: Property;
   editedProperty: Property;
@@ -16,6 +17,8 @@ export const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
   isEditing,
   setEditedProperty,
 }) => {
+
+    
   return (
     <div className="space-y-6 bg-red">
       <div>
