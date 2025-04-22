@@ -119,7 +119,12 @@ const MakeOfferModal: React.FC<MakeOfferModalProps> = ({
           })
         );
         console.log('Offer message sent successfully');
-        navigate('/listerdashboard');
+        navigate(`/offer/${offer._id}`, { 
+          state: { 
+            fromCreateOffer: true,
+            propertyId: propertyId 
+          } 
+        });
       } catch (messageError) {
         console.error('Error sending offer message:', messageError);
         // Continue anyway, as the offer was created successfully

@@ -1,50 +1,64 @@
 // src/types/messages.ts
-import { User } from '../services/offerService';
+import { 
+  ID,
+  User, 
+  Property 
+} from './common';
+import { MessageType } from './offerstatusenums';
+import { Offer } from './offers';
 
-// MongoDB ObjectId type
-export interface MongoDBId {
-  $oid: string;
-}
-
-export interface Property {
-  _id: string | MongoDBId;
-  propertyName: string;
-  propertyType?: string;
-  images?: string[];
-  
-  // Keeping all property fields that might be needed
-}
-
-export interface OfferDetails {
-  _id: string | MongoDBId;  // Support both string and MongoDB ObjectId format
-  amount: number;
-  currency: string;
-  currencySymbol: string;
-  duration: number;
-  status: 'pending' | 'accepted' | 'pending_acceptance'| 'rejected' | 'expired' | 'withdrawn' | 'completed';
-  securityDeposit: number;
-  moveInDate: Date | string;
-  propertyImage?: string;
-  totalAmount?: number;
-  transactionType?: 'rental' | 'sale';
-  responseType?: 'acceptance' | 'rejection' | 'counter' | 'withdrawal';
-  expiry?: Date | string;
-  isCounterOffer?: boolean;
-}
-
-export interface Message {
-  _id: string | MongoDBId;
-  sender: User;
-  receiver: User;
-  property: Property;
+// Base message interface for both frontend and backend
+export interface BaseMessage {
+  _id: ID;
+  sender: ID | User;
+  receiver: ID | User;
+  property: ID | Property;
   content: string;
   read: boolean;
-  type: 'text' | 'offer' | 'offer_response' | 'payment_proof' | 'payment_confirmation'; // Update this line
-  offerDetails?: OfferDetails;
+  type: MessageType | string;
+  offerDetails?: {
+    _id: ID;
+    amount: number;
+    currency: string;
+    currencySymbol: string;
+    duration: number;
+    status: string;
+    securityDeposit: number;
+    moveInDate: Date | string;
+    propertyImage?: string;
+    totalAmount?: number;
+    pendingRenterAccept?: boolean;
+    pendingOwnerConfirmation?: boolean;
+    paymentDeadline?: Date | string;
+    responseDeadline?: Date | string;
+    offPlatformPayment?: boolean;
+    proofOfPayment?: string;
+    transactionType?: string;
+    currentBillingCycle?: number;
+    totalBillingCycles?: number;
+  };
+  paymentProof?: {
+    offerId: ID;
+    imageUrl: string;
+    method: string;
+    amount: number;
+    reference: string;
+    date: Date | string;
+    notes: string;
+    verified: boolean;
+    verifiedBy?: ID | User;
+    verifiedAt?: Date | string;
+  };
   createdAt: Date | string;
-  paymentProof?: any; // Add this if needed
+  updatedAt?: Date | string;
 }
-// Chat-specific interfaces from the original types
+
+// Frontend-specific Message interface
+export interface Message extends BaseMessage {
+  // Add any frontend-specific properties here
+}
+
+// Chat-specific interfaces
 export interface ChatContact {
   user: User;
   property: Property;
@@ -65,32 +79,26 @@ export interface ThreadListProps {
 }
 
 export interface ChatWindowProps {
-  contact: ChatContact | null;  // Making it nullable instead of optional
+  contact: ChatContact | null;
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string) => Promise<void>;
   isLoading: boolean;
+  onRefreshMessages?: () => void;
 }
 
 // Message content for API communications
 export interface MessageContent {
-  type: 'text' | 'offer' | 'offer_response' | 'payment_proof' | 'payment_confirmation';
+  type: MessageType | string;
   content?: string;
-  offerDetails?: OfferDetails;
+  offerDetails?: Partial<Offer>;
 }
 
-// Offer-related types
-export interface CreateOfferDTO {
-  propertyId: string | MongoDBId;
-  amount: number;
-  securityDeposit: number;
-  currency: string;
-  moveInDate: Date;
-  duration: number;
-  message?: string;
-  totalAmount: number;
-  expiry: Date;
+// Timeline history event
+export interface TimelineEvent {
+  type: string;
+  date: Date | string;
+  actor: ID;
+  status: 'completed' | 'pending' | 'failed';
+  offerId: ID;
+  data?: any;
 }
-
-export type OfferStatus = 'pending' | 'accepted' | 'pending_acceptance' | 'rejected' | 'expired' | 'withdrawn' | 'completed';
-export type PaymentStatus = 'awaiting' | 'processing' | 'completed' | 'failed' | 'refunded';
-export type PaymentType = 'rent' | 'deposit' | 'refund';

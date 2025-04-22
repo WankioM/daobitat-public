@@ -7,6 +7,7 @@ import { ChatContact, Message } from '../../types/messages';
 import { messageService } from '../../services/messageService';
 import { User } from '../../services/offerService';
 import { getMongoId } from '../../utils/mongoUtils';
+import { idToString } from '../../types/common';
 
 const Messages: React.FC = () => {
   const { user } = useUser();
@@ -40,7 +41,17 @@ const Messages: React.FC = () => {
             property: {
               _id: threadData.propertyId,
               propertyName: threadData.propertyName,
-              propertyType: threadData.propertyType || '' // Providing default value
+              propertyType: threadData.propertyType || '', // Providing default value
+              owner: threadData.ownerId, // Add the owner field
+              price: 0, // Add required fields with default values
+              space: 0,
+              images: [],
+              action: 'rent',
+              status: {
+                sold: false,
+                occupied: false,
+                listingState: ''
+              }
             },
             unreadCount: 0
           };
@@ -112,7 +123,16 @@ const Messages: React.FC = () => {
             _id: message.property._id,
             propertyName: message.property.propertyName || 'Unnamed Property',
             propertyType: message.property.propertyType || '',
-            images: message.property.images
+            images: message.property.images || [],
+            owner: otherUser._id, // Add owner field
+            price: 0, // Add required fields with default values
+            space: 0,
+            action: 'rent',
+            status: {
+              sold: false,
+              occupied: false,
+              listingState: ''
+            }
           },
           lastMessage: message as any,
           unreadCount: (message.receiver._id === user._id && !message.read) ? 1 : 0
@@ -163,137 +183,92 @@ const Messages: React.FC = () => {
     }
   }, [user]);
 
-  // Fetch all messages and organize them into contacts
+  // Load contacts on initial render
   useEffect(() => {
     fetchAllMessages();
   }, [fetchAllMessages, refreshCount]);
 
-  // Function to fetch conversation for selected contact
-  const fetchConversation = useCallback(async () => {
-    if (!selectedContact || !user || !user._id) return;
+  // Load messages for the selected contact
+  /**
+   * Fetches messages for a contact and marks them as read if necessary.
+   * @param {string} contactId - The ID of the contact to fetch messages for.
+   * @param {string} propertyId - The ID of the property to fetch messages for.
+   */
+  const fetchMessagesForContact = useCallback(async (contactId: string, propertyId: string) => {
+    if (!user || !user._id) return;
     
-    // Add null checks and validation
-    if (!isValidWithId(selectedContact.user) || !isValidWithId(selectedContact.property)) {
-      console.error('Invalid selected contact:', selectedContact);
-      return;
-    }
-
-    const userId = getMongoId(selectedContact.user._id);
-    const propertyId = getMongoId(selectedContact.property._id);
-
-    if (!userId || !propertyId) {
-      console.error('Invalid user or property ID');
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const conversationMessages = await messageService.getConversation(
-        userId,
-        propertyId
-      );
+      const fetchedMessages = await messageService.getConversation(contactId, propertyId);
+      setMessages(Array.isArray(fetchedMessages) ? fetchedMessages as unknown as Message[] : []);
       
-      // Validate messages
-      if (Array.isArray(conversationMessages)) {
-        // Filter out any invalid messages
-        const validMessages = conversationMessages.filter(msg => 
-          isValidWithId(msg) && isValidWithId(msg.sender) && isValidWithId(msg.receiver)
-        );
-        setMessages(validMessages as Message[]);
-      } else {
-        console.error('Invalid conversation messages:', conversationMessages);
-        setMessages([]);
+      // Improve message read marking
+      if (fetchedMessages && fetchedMessages.length > 0) {
+        const unreadMessagePromises = fetchedMessages
+          .filter(message => !message.read)
+          .map(message => {
+            const messageId = getMongoId(message._id);
+            return messageId 
+              ? messageService.markAsRead(messageId).catch(error => {
+                  console.warn(`Failed to mark message ${messageId} as read:`, error);
+                  return null; // Continue processing other messages
+                })
+              : null;
+          })
+          .filter(promise => promise !== null);
+  
+        // Wait for all read marking attempts to complete
+        await Promise.allSettled(unreadMessagePromises);
       }
     } catch (error) {
-      console.error('Error fetching conversation:', error);
+      console.error('Error fetching messages for contact:', error);
       setMessages([]);
     } finally {
       setIsLoading(false);
     }
-  }, [selectedContact, user]);
+  }, [user]);
 
-  // Fetch messages for selected contact
+  // Load messages when selected contact changes
   useEffect(() => {
-    fetchConversation();
-  }, [fetchConversation, refreshCount]);
-
-  // Handler to refresh messages (used after offer updates)
-  const handleRefreshMessages = () => {
-    setRefreshCount(prevCount => prevCount + 1);
-  };
-
-  const handleSendMessage = async (content: string) => {
-    if (!selectedContact) return;
-    
-    // Get user ID directly from localStorage if not available in context
-    let userId: string | undefined;
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData = JSON.parse(storedUser);
-        userId = userData._id;
-      }
-    } catch (error) {
-      console.error('Error accessing user data:', error);
-    }
-    
-    if (!userId) {
-      console.error('User ID not available');
-      return;
-    }
-    
-    // Validate selectedContact properties
-    if (!isValidWithId(selectedContact.user) || !isValidWithId(selectedContact.property)) {
-      console.error('Invalid contact information:', selectedContact);
-      return;
-    }
-    
-    const propertyId = getMongoId(selectedContact.property._id);
-    const receiverId = getMongoId(selectedContact.user._id);
-  
-    if (!receiverId || !propertyId) {
-      console.error('Invalid user or property ID', { receiverId, propertyId });
-      return;
-    }
-  
-    try {
-      const newMessage = await messageService.sendMessage(
-        receiverId,  // This is the ID of the other user
-        propertyId,
-        content
+    if (selectedContact && user) {
+      fetchMessagesForContact(
+        getMongoId(selectedContact.user._id) || '', 
+        getMongoId(selectedContact.property._id) || ''
       );
-      
-      if (newMessage && isValidWithId(newMessage)) {
-        setMessages(prev => [...prev, newMessage as Message]);
-        
-        // Update contacts list with new message
-        setContacts(prev => {
-          const updated = [...prev];
-          const contactIndex = updated.findIndex(
-            c => 
-              isValidWithId(c.user) && 
-              isValidWithId(c.property) &&
-              getMongoId(c.user._id) === receiverId && 
-              getMongoId(c.property._id) === propertyId
-          );
-          if (contactIndex !== -1) {
-            updated[contactIndex] = {
-              ...updated[contactIndex],
-              lastMessage: newMessage as Message
-            };
-          }
-          return updated;
-        });
-      } else {
-        console.error('Invalid new message received:', newMessage);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
     }
-  };
+  }, [selectedContact, fetchMessagesForContact, user]);
 
+  // Handle contact selection
   const handleContactSelect = (contact: ChatContact) => {
     setSelectedContact(contact);
+  };
+
+  // Handle sending a message
+  const handleSendMessage = async (content: string) => {
+    if (!selectedContact || !user) return;
+    
+    try {
+      const recipientId = getMongoId(selectedContact.user._id) || '';
+      const propertyId = getMongoId(selectedContact.property._id) || '';
+      
+      await messageService.sendMessage(recipientId, propertyId, content);
+      
+      // Refresh messages
+      fetchMessagesForContact(recipientId, propertyId);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error; // Re-throw to let the component know it failed
+    }
+  };
+
+  // Handle manual refresh
+  const handleRefreshMessages = () => {
+    if (selectedContact && user) {
+      fetchMessagesForContact(
+        getMongoId(selectedContact.user._id) || '', 
+        getMongoId(selectedContact.property._id) || ''
+      );
+    }
   };
 
   return (
@@ -301,7 +276,7 @@ const Messages: React.FC = () => {
       <div className="w-1/3 border-r border-gray-200 h-full overflow-hidden">
         <ThreadList
           contacts={contacts}
-          selectedContactId={selectedContact?.user?._id}
+          selectedContactId={selectedContact?.user?._id ? idToString(selectedContact.user._id) : undefined}
           onSelectContact={handleContactSelect}
         />
       </div>

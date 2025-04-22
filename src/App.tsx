@@ -15,6 +15,8 @@ import ContactPage from './NewComponents/Contact/ContactUs';
 import PropertyTab from './NewComponents/Recommendations/PropertyTab/PropertyTab';
 import AboutUs from './NewComponents/AboutUs/AboutUs';
 import HeroPropertyFocus from './NewComponents/Recommendations/PropertyFocus/HeroPropertyFocus';
+import OfferPage from './NewComponents/PaymentFlow/Offer/OfferPage';
+import PlotInDev from './NewComponents/PaymentFlow/InDev/PlotInDev';
 
 const App: React.FC = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -42,6 +44,8 @@ const App: React.FC = () => {
             <Route path="/signup" element={<SignUpContainer />} />
             <Route path="/listerdashboard" element={<ListerDashBoard />} />
             <Route path="/billings" element={<Billings />} />
+            <Route path="/offer/:id" element={<OfferPage />} />
+            <Route path="/payment-development" element={<PlotInDev />} />
           </Routes>
         </Router>
       </UserProvider>

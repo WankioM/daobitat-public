@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { OfferDetails } from '../../types/messages';
+import { OfferDetails } from '../../types/offers';
 import { FaCalendarAlt, FaCoins, FaClock } from 'react-icons/fa';
 
 // Define the MongoDBId type to match what's in your system
