@@ -54,7 +54,7 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   };
   
   // Case 1: Owner viewing a pending offer from tenant
-if (isLister && status === 'pending' && !isOwn) {
+if (isLister && status === 'pending') {
   console.log('SHOW ACCEPT/REJECT BUTTONS', {
     isLister,
     status,
@@ -98,20 +98,26 @@ if (isLister && status === 'pending' && !isOwn) {
     );
   }
 
-  // Case 3: Renter viewing an accepted offer - show payment button
-  if (isRenter && status === 'accepted') {
-    return (
-      <div className="mt-4">
-        <button
-          onClick={() => navigate('/payment-development')}
-          className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
-          disabled={disabled}
-        >
-          Make Initial Payment
-        </button>
-      </div>
-    );
-  }
+  
+// Case 3: Renter viewing an accepted offer - show payment button
+if (isRenter && status === 'accepted') {
+  return (
+    <div className="mt-4">
+      <button
+        onClick={() => navigate('/listerdashboard', { 
+          state: { 
+            activeTab: 'PaymentFlow',
+            paymentSection: 'Payments'
+          }
+        })}
+        className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
+        disabled={disabled}
+      >
+        Make Initial Payment
+      </button>
+    </div>
+  );
+}
 
   // Case 4: Owner viewing an accepted offer - waiting for payment
   if (isLister && status === 'accepted') {

@@ -1,53 +1,40 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HowPaymentsWork from './HowPaymentsWork';
-import HowOwnershipChanges from './HowOwnershipChanges';
-import HowWeSafeguard from './HowWeSafeguard';
+import PaymentFlowNavigation from './PaymentFlowNavigation';
 
 type FeatureTab = 'Payments' | 'Ownership' | 'Security' | null;
 
-const PlotInDev: React.FC = () => {
-  const [activeFeature, setActiveFeature] = useState<FeatureTab>(null);
+interface PlotInDevProps {
+  initialSection?: 'Payments' | 'Ownership' | 'Security';
+}
+
+const PlotInDev: React.FC<PlotInDevProps> = ({ initialSection }) => {
+  const [activeFeature, setActiveFeature] = useState<FeatureTab>(initialSection || null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (initialSection) {
+      setActiveFeature(initialSection);
+    }
+  }, [initialSection]);
 
   const handleBack = () => {
     if (activeFeature) {
       setActiveFeature(null);
     } else {
-      navigate('/dashboard', { state: { activeTab: 'Properties' } });
-    }
-  };
-
-  const renderFeatureContent = () => {
-    switch (activeFeature) {
-      case 'Payments':
-        return <HowPaymentsWork />;
-      case 'Ownership':
-        return <HowOwnershipChanges />;
-      case 'Security':
-        return <HowWeSafeguard />;
-      default:
-        return null;
+      navigate('/listerdashboard', { state: { activeTab: 'Properties' } });
     }
   };
 
   return (
     <div className="min-h-screen bg-milk">
       <div className="max-w-6xl mx-auto py-16 px-4 sm:px-6 lg:px-8">
-        {/* Back button */}
-        <button 
-          onClick={handleBack}
-          className="mb-6 flex items-center text-rustyred hover:text-rustyred/80 transition-colors"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          {activeFeature ? 'Back to features' : 'Back to dashboard'}
-        </button>
-
         {activeFeature ? (
-          renderFeatureContent()
+          <PaymentFlowNavigation 
+            section={activeFeature} 
+            onSectionChange={setActiveFeature} 
+            onBack={handleBack} 
+          />
         ) : (
           <>
             <div className="text-center mb-16">
@@ -67,6 +54,7 @@ const PlotInDev: React.FC = () => {
                 onClick={() => setActiveFeature('Payments')}
                 className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition hover:scale-105 hover:shadow-xl"
               >
+                {/* Card content remains the same */}
                 <div className="p-6">
                   <div className="w-12 h-12 bg-rustyred/10 rounded-full flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-rustyred" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,8 +74,8 @@ const PlotInDev: React.FC = () => {
                 </div>
               </div>
 
-              {/* Card 2 - How Ownership Changes */}
-              <div 
+               {/* Card 2 - How Ownership Changes */}
+               <div 
                 onClick={() => setActiveFeature('Ownership')}
                 className="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transform transition hover:scale-105 hover:shadow-xl"
               >
@@ -134,6 +122,7 @@ const PlotInDev: React.FC = () => {
                 </div>
               </div>
             </div>
+          
           </>
         )}
       </div>

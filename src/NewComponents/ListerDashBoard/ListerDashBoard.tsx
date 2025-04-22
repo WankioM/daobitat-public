@@ -6,30 +6,55 @@ import AccountInfo from './AccountInfo/AccountInfo';
 import Properties from './Properties/Properties';
 import Billings from '../ListerDashBoard/Billings/Billings';
 import Messages from '../Messages/Messages';
-import Financing from '../ListerDashBoard/FinancingDashboard/Financing';
 import WishList from './WishList/WishList';
 import LeaseManagement from '../PaymentFlow/Lease/LeaseManagement';
+import PlotInDev from '../PaymentFlow/InDev/PlotInDev';
 
-export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'Financing' | 'ActiveLeases';
+export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'ActiveLeases' | 'PaymentFlow';
 
 const ListerDashboard: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('Properties');
   const { user } = useUser();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [initialPaymentSection, setInitialPaymentSection] = useState<'Payments' | 'Ownership' | 'Security'>('Payments');
 
   useEffect(() => {
-    const state = location.state as { activeTab?: TabType } | null;
+    // Wait a moment for user data to load before deciding to redirect
+    const authCheckTimer = setTimeout(() => {
+      setIsCheckingAuth(false);
+    }, 1000);
+
+    return () => clearTimeout(authCheckTimer);
+  }, []);
+
+  useEffect(() => {
+    const state = location.state as { 
+      activeTab?: TabType; 
+      paymentSection?: 'Payments' | 'Ownership' | 'Security';
+    } | null;
+    
     if (state?.activeTab) {
       setActiveTab(state.activeTab);
+      
+      // If we have a payment section and the active tab is PaymentFlow,
+      // set it in local state to pass to PlotInDev
+      if (state.activeTab === 'PaymentFlow' && state.paymentSection) {
+        setInitialPaymentSection(state.paymentSection);
+      }
     }
   }, [location]);
 
-  useEffect(() => {
-    if (!user) {
+   useEffect(() => {
+    if (!isCheckingAuth && !user) {
       navigate('/login');
     }
-  }, [user, navigate]);
+  }, [user, isCheckingAuth, navigate]);
+
+  if (isCheckingAuth) return <div>Checking authentication...</div>;
+  
+  if (!user) return null;
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab as TabType);
@@ -47,10 +72,11 @@ const ListerDashboard: React.FC = () => {
         return <WishList />;
       case 'Billings':
         return <Billings />;
-      case 'Financing':
-        return <Financing />;
+      
       case 'ActiveLeases':
         return <LeaseManagement />;
+        case 'PaymentFlow':
+      return <PlotInDev initialSection={initialPaymentSection} />;
       default:
         return <Properties />;
     }

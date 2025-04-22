@@ -41,9 +41,9 @@ export const LandingPage = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-graphite via-graphite/90 to-graphite/70 relative overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-graphite via-graphite/95 to-graphite/80 relative overflow-hidden">
   {/* More obvious animated gradient overlay */}
-  <div className="absolute inset-0 bg-gradient-to-r from-rustyred/20 via-graphite to-rustyred/20 bg-[length:200%_100%] animate-gradient-x"></div>
+  <div className="absolute inset-0 bg-gradient-to-r from-rustyred/10 via-graphite to-rustyred/5 bg-[length:200%_100%] animate-gradient-x"></div>
       {/* Header */}
       <Header />
 
