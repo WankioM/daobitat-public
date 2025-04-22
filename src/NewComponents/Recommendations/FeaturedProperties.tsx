@@ -158,8 +158,8 @@ const FeaturedProperties = () => {
         const totalWidth = singleSetWidth * 4; // Original + clones
         
         // Animation variables
-        let scrollSpeed = 0.5; // Slow speed for gentle scrolling
-        const baseSpeed = 0.5;
+        let scrollSpeed = 0.3; // Slow speed for gentle scrolling
+        const baseSpeed = 0.3;
         const maxSpeed = 5;
         let animationId: number;
         let isPaused = false;
