@@ -162,7 +162,9 @@ const useOfferStore = create<OfferState>((set, get) => ({
     let response: any;
     
     try {
+      console.log(`offerStore: storeHandleOfferAction - Processing action "${action}" for offer ID:`, offerId);
       switch(action) {
+        
         case 'accept':
           console.log('Accepting offer:', offerId);
           response = await offerService.acceptOffer(offerId);
@@ -268,7 +270,9 @@ const useOfferStore = create<OfferState>((set, get) => ({
   loadOffer: async (offerId: string) => {
     set({ error: null });
     try {
+      console.log('offerStore: loadOffer - Attempting to fetch offer ID:', offerId);
       const offer = await offerService.getOfferById(offerId);
+      console.log('offerStore: loadOffer - Successfully fetched offer ID:', offerId, 'Response type:', typeof offer, 'Response:', offer);
       
       // Get the offer ID as string
       const responseId = idToString(offer._id);

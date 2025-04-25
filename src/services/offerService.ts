@@ -205,6 +205,7 @@ class OfferService {
    */
   async getOfferById(offerId: string): Promise<Offer> {
     try {
+      console.log('offerService: getOfferById - Attempting to fetch offer ID:', offerId);
       const response = await api.get<APIResponse<Offer>>(
         `${this.baseUrl}/${offerId}`
       );

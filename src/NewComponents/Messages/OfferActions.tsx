@@ -1,13 +1,15 @@
 // src/NewComponents/Messages/OfferActions.tsx
 import React from 'react';
-import { Offer } from '../../types/offers';
 import { useNavigate } from 'react-router-dom';
+import { Offer } from '../../types/offers';
+import { getMongoId } from '../../utils/mongoUtils';
 
 interface OfferActionsProps {
   status: Offer['status'];
   isLister: boolean;
   isRenter: boolean;
   isOwn: boolean;
+  offerId: string;
   onAccept: () => void;
   onReject: () => void;
   onWithdraw: () => void;
@@ -21,6 +23,7 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   isLister,
   isRenter,
   isOwn,
+  offerId,
   onAccept,
   onReject,
   onWithdraw,
@@ -28,18 +31,29 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   onRefresh,
   disabled = false
 }) => {
-
   const navigate = useNavigate();
 
-  console.log('OfferActions component Called', {
-    status,
-    isLister,
-    isRenter,
-    isOwn,
-    disabled
-  });
-
-  
+  const logAndValidateOfferId = () => {
+    console.log('OfferActions - Original offerId:', offerId);
+    console.log('OfferActions - offerId type:', typeof offerId);
+    
+    // Check for undefined or "undefined" string
+    if (!offerId || offerId === "undefined") {
+      console.error('OfferActions - Invalid offerId detected:', offerId);
+      return false;
+    }
+    
+    // Attempt to get a valid MongoDB ID
+    const validId = getMongoId(offerId);
+    console.log('OfferActions - Processed offerId:', validId);
+    
+    if (!validId) {
+      console.error('OfferActions - Failed to extract valid MongoDB ID from:', offerId);
+      return false;
+    }
+    
+    return validId;
+  };
 
   // Create handler with automatic refresh on error
   const createActionHandler = (handler: () => void) => {
@@ -54,34 +68,28 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   };
   
   // Case 1: Owner viewing a pending offer from tenant
-if (isLister && status === 'pending') {
-  console.log('SHOW ACCEPT/REJECT BUTTONS', {
-    isLister,
-    status,
-    isOwn
-  });
-  
-  return (
-    <div className="mt-4">
-      <div className="flex justify-end space-x-2">
-        <button
-          onClick={createActionHandler(onReject)}
-          className="px-3 py-1.5 bg-lightstone text-graphite rounded-lg hover:bg-lightstone/80 transition-colors text-sm"
-          disabled={disabled}
-        >
-          Reject
-        </button>
-        <button
-          onClick={createActionHandler(onAccept)}
-          className="px-3 py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
-          disabled={disabled}
-        >
-          Accept
-        </button>
+  if (isLister && status === 'pending') {
+    return (
+      <div className="mt-4">
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={createActionHandler(onReject)}
+            className="px-3 py-1.5 bg-lightstone text-graphite rounded-lg hover:bg-lightstone/80 transition-colors text-sm"
+            disabled={disabled}
+          >
+            Reject
+          </button>
+          <button
+            onClick={createActionHandler(onAccept)}
+            className="px-3 py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
+            disabled={disabled}
+          >
+            Accept
+          </button>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   // Case 2: Renter's own pending offer - only show withdraw button
   if (isRenter && isOwn && status === 'pending') {
@@ -98,26 +106,29 @@ if (isLister && status === 'pending') {
     );
   }
 
-  
-// Case 3: Renter viewing an accepted offer - show payment button
-if (isRenter && status === 'accepted') {
-  return (
-    <div className="mt-4">
+  // Case 3: Renter viewing an accepted offer - show payment button
+  if (isRenter && status === 'accepted') {
+    return (
       <button
-        onClick={() => navigate('/listerdashboard', { 
-          state: { 
-            activeTab: 'PaymentFlow',
-            paymentSection: 'Payments'
-          }
-        })}
-        className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
-        disabled={disabled}
-      >
-        Make Initial Payment
-      </button>
-    </div>
-  );
-}
+  onClick={() => {
+    const validId = logAndValidateOfferId();
+    if (validId) {
+      navigate(`/payment/${validId}`, { 
+        state: { 
+          from: window.location.pathname
+        }
+      });
+    } else {
+      alert('Error: Invalid offer ID. Please refresh the page and try again.');
+    }
+  }}
+  className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
+  disabled={disabled}
+>
+  Make Initial Payment
+</button>
+    );
+  }
 
   // Case 4: Owner viewing an accepted offer - waiting for payment
   if (isLister && status === 'accepted') {
@@ -128,8 +139,8 @@ if (isRenter && status === 'accepted') {
     );
   }
 
-  // For completed, expired, withdrawn, or rejected offers - just show status
-  if (status === 'completed' || status === 'expired' || status === 'withdrawn' || status === 'rejected') {
+   // For completed, expired, withdrawn, or rejected offers - just show status
+   if (status === 'completed' || status === 'expired' || status === 'withdrawn' || status === 'rejected') {
     return (
       <div className="mt-4 text-center">
         <p className="text-sm text-graphite">

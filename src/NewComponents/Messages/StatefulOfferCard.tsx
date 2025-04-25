@@ -400,6 +400,7 @@ const StatefulOfferCard: React.FC<StatefulOfferCardProps> = ({
             onAccept={handleAccept}
             onReject={handleReject}
             onWithdraw={handleWithdraw}
+            offerId={offerId} 
             onInitiatePayment={handleInitiatePayment}
             disabled={false}
             onRefresh={() => setRefreshAttempts(prev => prev + 1)}

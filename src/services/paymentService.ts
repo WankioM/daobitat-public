@@ -1,71 +1,32 @@
 // services/paymentService.ts
 import api from './api';
 import { AxiosResponse } from 'axios';
+import { 
+  ApiResponse, 
+  PaymentInitializationRequest, 
+  PaymentVerificationRequest, 
+  OffPlatformPaymentRequest, 
+  OffPlatformVerificationRequest,
+  RecurringPaymentSetupRequest,
+  EscrowUpdateRequest,
+  RefundRequest,
+  Payment,
+  PaymentInitializationResponse,
+  PaymentVerificationResponse,
+  PaymentDetailsResponse,
+  EthereumProvider
+} from '../types/payment';
 
-// Type definitions
-interface PaymentInitialization {
-  offerId: string;
-  amount: number;
-  type: 'deposit' | 'rent';
-  method: 'wallet' | 'card' | 'mpesa' | 'cash' | 'bank';
-  currency: string;
-  metadata?: Record<string, any>;
-}
-
-interface OffPlatformPayment {
-  offerId: string;
-  amount: number;
-  paymentDate?: string; // ISO date string
-  proofImageUrl: string;
-  notes?: string;
-  paymentMethod: string;
-  billingCycle?: number;
-  metadata?: Record<string, any>;
-}
-
-interface PaymentVerification {
-  paymentId: string;
-  transactionId: string;
-  paymentProviderId?: string;
-}
-
-interface OffPlatformVerification {
-  verificationStatus: 'verified' | 'rejected';
-  notes?: string;
-}
-
-interface RecurringPaymentSetup {
-  offerId: string;
-  autoRenew: boolean;
-}
-
-interface EscrowUpdate {
-  escrowStatus: string;
-  escrowId?: string;
-  contractAddress?: string;
-  releaseDate?: string; // ISO date string
-  agreementId?: string;
-}
-
-interface RefundRequest {
-  paymentId: string;
-  reason: string;
-}
-
-// Response types
-interface ApiResponse<T> {
-  status: string;
-  data: T;
-  message?: string;
-}
+// Import the StarknetWindowObject type
+import type { StarknetWindowObject } from 'get-starknet-core';
 
 export class PaymentService {
   /**
    * Initialize a new payment
    */
-  static async initializePayment(data: PaymentInitialization): Promise<ApiResponse<any>> {
+  static async initializePayment(data: PaymentInitializationRequest): Promise<ApiResponse<PaymentInitializationResponse>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post('/api/payment/initialize', data);
+      const response: AxiosResponse<ApiResponse<PaymentInitializationResponse>> = await api.post('/api/payment/initialize', data);
       return response.data;
     } catch (error) {
       console.error('Payment initialization failed:', error);
@@ -76,9 +37,9 @@ export class PaymentService {
   /**
    * Verify a payment has been completed
    */
-  static async verifyPayment(data: PaymentVerification): Promise<ApiResponse<any>> {
+  static async verifyPayment(data: PaymentVerificationRequest): Promise<ApiResponse<PaymentVerificationResponse>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post('/api/payment/verify', data);
+      const response: AxiosResponse<ApiResponse<PaymentVerificationResponse>> = await api.post('/api/payment/verify', data);
       return response.data;
     } catch (error) {
       console.error('Payment verification failed:', error);
@@ -89,9 +50,9 @@ export class PaymentService {
   /**
    * Get details of a payment
    */
-  static async getPaymentDetails(paymentId: string): Promise<ApiResponse<any>> {
+  static async getPaymentDetails(paymentId: string): Promise<ApiResponse<Payment>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.get(`/api/payment/${paymentId}`);
+      const response: AxiosResponse<ApiResponse<Payment>> = await api.get(`/api/payment/${paymentId}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get payment details:', error);
@@ -100,24 +61,47 @@ export class PaymentService {
   }
 
   /**
-   * Record an off-platform payment
-   */
-  static async recordOffPlatformPayment(data: OffPlatformPayment): Promise<ApiResponse<any>> {
-    try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post('/api/payment/off-platform', data);
-      return response.data;
-    } catch (error) {
-      console.error('Failed to record off-platform payment:', error);
-      throw error;
-    }
+ * Record an off-platform payment
+ */
+static async recordOffPlatformPayment(data: any): Promise<ApiResponse<Payment>> {
+  try {
+    // Create a request that matches exactly what the controller extracts and uses
+    // Based on paymentController.recordOffPlatformPayment implementation
+    const request = {
+      // Primary fields that controller explicitly extracts
+      offerId: data.offerId,
+      amount: data.amount,
+      paymentMethod: data.paymentMethod || 'cash',
+      proofImageUrl: data.proofImageUrl || '',
+      notes: data.notes || '',
+      billingCycle: data.billingCycle || 1,
+      
+      // These fields are used by the controller but configured differently
+      type: 'rent',
+      currency: 'KES',
+      
+      // Add metadata if needed
+      metadata: {
+        paymentType: 'offPlatform',
+        paymentReference: data.reference || ''
+      }
+    };
+    
+    console.log('Final payment request to send:', JSON.stringify(request));
+    
+    const response = await api.post('/api/payment/off-platform', request);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to record off-platform payment:', error);
+    throw error;
   }
-
+}
   /**
    * Verify an off-platform payment
    */
-  static async verifyOffPlatformPayment(paymentId: string, data: OffPlatformVerification): Promise<ApiResponse<any>> {
+  static async verifyOffPlatformPayment(paymentId: string, data: OffPlatformVerificationRequest): Promise<ApiResponse<Payment>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post(`/api/payment/${paymentId}/verify-off-platform`, data);
+      const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/api/payment/${paymentId}/verify-off-platform`, data);
       return response.data;
     } catch (error) {
       console.error('Failed to verify off-platform payment:', error);
@@ -128,9 +112,9 @@ export class PaymentService {
   /**
    * Get payments for a specific billing cycle
    */
-  static async getBillingCyclePayments(offerId: string, cycleNumber: number): Promise<ApiResponse<any>> {
+  static async getBillingCyclePayments(offerId: string, cycleNumber: number): Promise<ApiResponse<Payment[]>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.get(`/api/payment/offer/${offerId}/cycle/${cycleNumber}`);
+      const response: AxiosResponse<ApiResponse<Payment[]>> = await api.get(`/api/payment/offer/${offerId}/cycle/${cycleNumber}`);
       return response.data;
     } catch (error) {
       console.error('Failed to get billing cycle payments:', error);
@@ -141,7 +125,7 @@ export class PaymentService {
   /**
    * Initialize a recurring payment setup
    */
-  static async initializeRecurringPayment(data: RecurringPaymentSetup): Promise<ApiResponse<any>> {
+  static async initializeRecurringPayment(data: RecurringPaymentSetupRequest): Promise<ApiResponse<any>> {
     try {
       const response: AxiosResponse<ApiResponse<any>> = await api.post('/api/payment/recurring', data);
       return response.data;
@@ -154,9 +138,9 @@ export class PaymentService {
   /**
    * Update payment escrow details
    */
-  static async updatePaymentEscrowDetails(paymentId: string, data: EscrowUpdate): Promise<ApiResponse<any>> {
+  static async updatePaymentEscrowDetails(paymentId: string, data: EscrowUpdateRequest): Promise<ApiResponse<Payment>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post(`/api/payment/${paymentId}/escrow`, data);
+      const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/api/payment/${paymentId}/escrow`, data);
       return response.data;
     } catch (error) {
       console.error('Failed to update escrow details:', error);
@@ -167,9 +151,9 @@ export class PaymentService {
   /**
    * Process a refund
    */
-  static async processRefund(data: RefundRequest): Promise<ApiResponse<any>> {
+  static async processRefund(data: RefundRequest): Promise<ApiResponse<Payment>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.post('/api/payment/refund', data);
+      const response: AxiosResponse<ApiResponse<Payment>> = await api.post('/api/payment/refund', data);
       return response.data;
     } catch (error) {
       console.error('Failed to process refund:', error);
@@ -223,15 +207,15 @@ export class PaymentService {
    * Complete payment workflow including proof upload
    */
   static async recordPaymentWithProof(
-    paymentData: OffPlatformPayment, 
+    paymentData: Omit<OffPlatformPaymentRequest, 'proofImageUrl'>, 
     proofFile: File
-  ): Promise<ApiResponse<any>> {
+  ): Promise<ApiResponse<Payment>> {
     try {
       // Step 1: Upload the proof image
       const proofImageUrl = await this.uploadPaymentProof(proofFile);
       
       // Step 2: Record the payment with the image URL
-      const paymentWithProof = {
+      const paymentWithProof: OffPlatformPaymentRequest = {
         ...paymentData,
         proofImageUrl
       };
@@ -247,7 +231,7 @@ export class PaymentService {
    * Get wallet balance for escrow payments
    * This method would interact with blockchain contracts
    */
-  static async getWalletEscrowBalance(walletAddress: string, contractAddress: string): Promise<any> {
+  static async getWalletEscrowBalance(walletAddress: string, contractAddress: string): Promise<ApiResponse<any>> {
     try {
       const response: AxiosResponse<ApiResponse<any>> = await api.get(
         `/api/payment/wallet/${walletAddress}/escrow/${contractAddress}/balance`
@@ -262,12 +246,89 @@ export class PaymentService {
   /**
    * Get all payment history for a user
    */
-  static async getUserPaymentHistory(): Promise<ApiResponse<any>> {
+  static async getUserPaymentHistory(): Promise<ApiResponse<Payment[]>> {
     try {
-      const response: AxiosResponse<ApiResponse<any>> = await api.get('/api/payment/user/history');
+      const response: AxiosResponse<ApiResponse<Payment[]>> = await api.get('/api/payment/user/history');
       return response.data;
     } catch (error) {
       console.error('Failed to get user payment history:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Connect wallet for blockchain payments
+   */
+  static async connectWallet(walletType: 'ethereum' | 'starknet' | 'braavos' | 'argentX'): Promise<string> {
+    try {
+      let address = '';
+      
+      switch (walletType) {
+        case 'ethereum':
+          if (window.ethereum) {
+            const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+            address = accounts[0];
+          } else {
+            throw new Error('Ethereum provider not found. Please install MetaMask or another Web3 wallet.');
+          }
+          break;
+          
+        case 'starknet':
+          // Properly type the starknet object from window
+          if (window.starknet) {
+            await window.starknet.enable();
+            // Ensure the selectedAddress exists before using it
+            if (window.starknet.selectedAddress) {
+              address = window.starknet.selectedAddress;
+            } else {
+              throw new Error('Starknet wallet address not available after enabling.');
+            }
+          } else {
+            throw new Error('Starknet wallet not detected.');
+          }
+          break;
+          
+        case 'braavos':
+          // Check for starknet_braavos first (using type assertion)
+          const braavosProvider = window.starknet_braavos as StarknetWindowObject | undefined;
+          if (braavosProvider) {
+            await braavosProvider.enable();
+            if (braavosProvider.selectedAddress) {
+              address = braavosProvider.selectedAddress;
+            } else {
+              throw new Error('Braavos wallet address not available after enabling.');
+            }
+          } else {
+            throw new Error('Braavos wallet not detected.');
+          }
+          break;
+          
+        case 'argentX':
+          // Check for starknet_argentX first (using type assertion)
+          const argentProvider = window.starknet_argentX as StarknetWindowObject | undefined;
+          if (argentProvider) {
+            await argentProvider.enable();
+            if (argentProvider.selectedAddress) {
+              address = argentProvider.selectedAddress;
+            } else {
+              throw new Error('Argent X wallet address not available after enabling.');
+            }
+          } else {
+            throw new Error('Argent X wallet not detected.');
+          }
+          break;
+          
+        default:
+          throw new Error('Unsupported wallet type.');
+      }
+      
+      if (!address) {
+        throw new Error(`Failed to get address from ${walletType} wallet.`);
+      }
+      
+      return address;
+    } catch (error) {
+      console.error(`Failed to connect ${walletType} wallet:`, error);
       throw error;
     }
   }

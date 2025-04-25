@@ -17,6 +17,7 @@ import AboutUs from './NewComponents/AboutUs/AboutUs';
 import HeroPropertyFocus from './NewComponents/Recommendations/PropertyFocus/HeroPropertyFocus';
 import OfferPage from './NewComponents/PaymentFlow/Offer/OfferPage';
 import PlotInDev from './NewComponents/PaymentFlow/InDev/PlotInDev';
+import PaymentFlowPage from './NewComponents/PaymentFlow/PaymentFlow';
 
 const App: React.FC = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
@@ -46,6 +47,7 @@ const App: React.FC = () => {
             <Route path="/billings" element={<Billings />} />
             <Route path="/offer/:id" element={<OfferPage />} />
             <Route path="/payment-development" element={<PlotInDev />} />
+            <Route path="/payment/:offerId" element={<PaymentFlowPage />} />
           </Routes>
         </Router>
       </UserProvider>

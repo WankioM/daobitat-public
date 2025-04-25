@@ -90,12 +90,13 @@ const OfferPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!id) return;
-      
+      console.log('OfferPage: Attempting to fetch offer with ID:', id);
       try {
         setLoading(true);
         
         // First, fetch the offer details
         const offerResponse = await offerService.getOfferById(id);
+        console.log('OfferPage: Successfully fetched offer with ID:', id, 'Response:', offerResponse);
         
         // Convert Offer to OfferDetails
         const offerDetails = convertToOfferDetails(offerResponse);
@@ -118,7 +119,7 @@ setOffer(offerDetails as any);
           }
         }
       } catch (err) {
-        console.error('Error fetching data:', err);
+        console.error(`OfferPage: Error fetching offer with ID ${id}:`, err);
         setError('Failed to load offer details. Please try again later.');
       } finally {
         setLoading(false);
