@@ -15,7 +15,10 @@ interface OfferActionsProps {
   onWithdraw: () => void;
   onInitiatePayment: () => void;
   disabled?: boolean;
-  onRefresh?: () => void; 
+  onRefresh?: () => void;
+  // Add new props for payment status
+  depositPaid?: boolean;
+  rentPaid?: boolean;
 }
 
 const OfferActions: React.FC<OfferActionsProps> = ({
@@ -29,7 +32,10 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   onWithdraw,
   onInitiatePayment,
   onRefresh,
-  disabled = false
+  disabled = false,
+  // Default values for payment status
+  depositPaid = false,
+  rentPaid = false
 }) => {
   const navigate = useNavigate();
 
@@ -107,40 +113,60 @@ const OfferActions: React.FC<OfferActionsProps> = ({
   }
 
   // Case 3: Renter viewing an accepted offer - show payment button
-  if (isRenter && status === 'accepted') {
+  // Only show payment button if payment hasn't been made yet
+  if (isRenter && status === 'accepted' && !rentPaid && !depositPaid) {
     return (
       <button
-  onClick={() => {
-    const validId = logAndValidateOfferId();
-    if (validId) {
-      navigate(`/payment/${validId}`, { 
-        state: { 
-          from: window.location.pathname
-        }
-      });
-    } else {
-      alert('Error: Invalid offer ID. Please refresh the page and try again.');
-    }
-  }}
-  className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
-  disabled={disabled}
->
-  Make Initial Payment
-</button>
+        onClick={() => {
+          const validId = logAndValidateOfferId();
+          if (validId) {
+            navigate(`/payment/${validId}`, { 
+              state: { 
+                from: window.location.pathname
+              }
+            });
+          } else {
+            alert('Error: Invalid offer ID. Please refresh the page and try again.');
+          }
+        }}
+        className="w-full py-1.5 bg-rustyred text-white rounded-lg hover:bg-rustyred/90 transition-colors text-sm"
+        disabled={disabled}
+      >
+        Make Initial Payment
+      </button>
     );
   }
 
-  // Case 4: Owner viewing an accepted offer - waiting for payment
-  if (isLister && status === 'accepted') {
+  // Case 3.1: Renter viewing an accepted offer but payment is already made
+  if (isRenter && status === 'accepted' && (rentPaid || depositPaid)) {
     return (
       <div className="mt-4 text-center">
-        <p className="text-sm text-graphite">Waiting for tenant's payment</p>
+        <p className="text-sm text-green-600 font-medium">
+          Payment completed
+        </p>
       </div>
     );
   }
 
-   // For completed, expired, withdrawn, or rejected offers - just show status
-   if (status === 'completed' || status === 'expired' || status === 'withdrawn' || status === 'rejected') {
+  // Case 4: Owner viewing an accepted offer - check payment status
+  if (isLister && status === 'accepted') {
+    return (
+      <div className="mt-4 text-center">
+        {rentPaid || depositPaid ? (
+          <p className="text-sm text-green-600 font-medium">
+            Payment received
+          </p>
+        ) : (
+          <p className="text-sm text-graphite">
+            Waiting for tenant's payment
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // For completed, expired, withdrawn, or rejected offers - just show status
+  if (status === 'completed' || status === 'expired' || status === 'withdrawn' || status === 'rejected') {
     return (
       <div className="mt-4 text-center">
         <p className="text-sm text-graphite">

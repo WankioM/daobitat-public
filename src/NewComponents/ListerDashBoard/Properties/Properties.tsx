@@ -3,8 +3,16 @@ import { PropertyCard } from './PropertyCard';
 import { IoAddCircleOutline } from 'react-icons/io5';
 import { AddPropertyModal } from './Forms/AddPropertyModal';
 import { propertyService } from '../../../services/propertyService';
+import { TabType } from '../ListerDashBoard';
 
-const Properties = () => {
+
+interface PropertiesProps {
+  setSelectedPropertyId: (id: string) => void;
+  setActiveTab: (tab: TabType) => void;
+}
+
+
+const Properties: React.FC<PropertiesProps> = ({ setSelectedPropertyId, setActiveTab }) => {
   const [properties, setProperties] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,6 +122,8 @@ const Properties = () => {
               property={property}
               onDelete={handleDeleteProperty}
               onPropertyUpdated={fetchProperties}
+              onSelectProperty={(id) => setSelectedPropertyId(id)} 
+  onSwitchTab={(tab) => setActiveTab(tab as TabType)}
             />
           ))}
         </div>

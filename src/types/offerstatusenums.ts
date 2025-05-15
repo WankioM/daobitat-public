@@ -25,8 +25,10 @@ export enum OfferStatus {
     OFFER = 'offer',
     OFFER_RESPONSE = 'offer_response',
     PAYMENT_PROOF = 'payment_proof',
-    PAYMENT_CONFIRMATION = 'payment_confirmation'
+    PAYMENT_CONFIRMATION = 'payment_confirmation',
+    PAYMENT_REQUEST = 'payment_request'
   }
+  
   
   export enum TransactionType {
     RENTAL = 'rental',

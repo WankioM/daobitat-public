@@ -392,20 +392,23 @@ const StatefulOfferCard: React.FC<StatefulOfferCardProps> = ({
           
           {/* Action Buttons - Using correct role detection */}
           {(safeIsLister || safeIsRenter) && (
-            <OfferActions
-            status={currentOffer.status}
-            isLister={safeIsLister}
-            isRenter={safeIsRenter}
-            isOwn={recalculatedIsOwn}
-            onAccept={handleAccept}
-            onReject={handleReject}
-            onWithdraw={handleWithdraw}
-            offerId={offerId} 
-            onInitiatePayment={handleInitiatePayment}
-            disabled={false}
-            onRefresh={() => setRefreshAttempts(prev => prev + 1)}
-          />
-          )}
+  <OfferActions
+    status={currentOffer.status}
+    isLister={safeIsLister}
+    isRenter={safeIsRenter}
+    isOwn={recalculatedIsOwn}
+    onAccept={handleAccept}
+    onReject={handleReject}
+    onWithdraw={handleWithdraw}
+    offerId={offerId} 
+    onInitiatePayment={handleInitiatePayment}
+    disabled={false}
+    onRefresh={() => setRefreshAttempts(prev => prev + 1)}
+    // Pass payment status
+    depositPaid={currentOffer.payment?.depositPaid || false}
+    rentPaid={currentOffer.payment?.rentPaid || false}
+  />
+)}
 
           {/* Fallback if neither role is true - for debugging */}
           {!safeIsLister && !safeIsRenter && showDiagnostics && (

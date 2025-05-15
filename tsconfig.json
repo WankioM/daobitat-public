@@ -26,6 +26,6 @@
   },
   "include": [
     "src"
-  ],
+, "../db-backend/src/services/recurringPaymentService.ts"  ],
   "types": ["@nomicfoundation/hardhat-toolbox"]
 }

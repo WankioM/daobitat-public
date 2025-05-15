@@ -43,7 +43,15 @@ interface OfferState {
  * This ensures all required fields exist and are properly formatted
  */
 function adaptServiceOffer(offer: any): Offer {
-  if (!offer) return offer;
+  if (!offer) {
+    console.error('adaptServiceOffer received null or undefined offer');
+    return offer;
+  }
+
+  console.log('adaptServiceOffer - Original offer:', JSON.stringify({
+    _id: offer._id,
+    property: typeof offer.property === 'object' ? offer.property._id : offer.property
+  }, null, 2));
 
   // Create a deep copy to avoid mutation issues
   const adaptedOffer = { ...offer };
@@ -65,6 +73,10 @@ function adaptServiceOffer(offer: any): Offer {
   if (adaptedOffer.payment && !Array.isArray(adaptedOffer.payment.history)) {
     adaptedOffer.payment.history = [];
   }
+
+  console.log('adaptServiceOffer - Adapted offer ID:', adaptedOffer._id, 
+    'type:', typeof adaptedOffer._id,
+    'stringified:', JSON.stringify(adaptedOffer._id));
 
   return adaptedOffer as Offer;
 }
@@ -109,6 +121,7 @@ const useOfferStore = create<OfferState>((set, get) => ({
         
         // Get the offer ID as string using our helper function
         const offerId = idToString(updatedOffer._id);
+        console.log('WebSocket update - Converted offer ID:', offerId);
         
         set((state) => ({
           activeOffers: {
@@ -139,6 +152,8 @@ const useOfferStore = create<OfferState>((set, get) => ({
   },
   
   updateOffer: (offerId: string, offerData: Partial<Offer>) => {
+    console.log('updateOffer - Updating offer with ID:', offerId);
+    
     set((state) => ({
       activeOffers: {
         ...state.activeOffers,
@@ -161,8 +176,10 @@ const useOfferStore = create<OfferState>((set, get) => ({
     set({ processing: true, error: null });
     let response: any;
     
+    console.log(`storeHandleOfferAction - Starting action "${action}" for offer ID:`, offerId);
+    console.log('Original offer ID format:', offerId, 'type:', typeof offerId);
+    
     try {
-      console.log(`offerStore: storeHandleOfferAction - Processing action "${action}" for offer ID:`, offerId);
       switch(action) {
         
         case 'accept':
@@ -220,8 +237,12 @@ const useOfferStore = create<OfferState>((set, get) => ({
           throw new Error(`Unhandled action type: ${action}`);
       }
       
+      console.log(`Action ${action} response:`, response);
+      console.log('Response offer ID format:', response._id, 'type:', typeof response._id);
+      
       // Get the offer ID as string
       const responseId = idToString(response._id);
+      console.log('Converted response ID:', responseId);
       
       // Update local state with the response
       set((state) => ({
@@ -236,6 +257,11 @@ const useOfferStore = create<OfferState>((set, get) => ({
       return adaptServiceOffer(response);
     } catch (error: any) {
       console.error(`Error performing action ${action} on offer ${offerId}:`, error);
+      console.error('Error details:', error.message);
+      if (error.response) {
+        console.error('Server response:', error.response.data);
+      }
+      
       set({ 
         processing: false,
         error: error.message || `Failed to perform ${action} action`
@@ -243,10 +269,12 @@ const useOfferStore = create<OfferState>((set, get) => ({
       
       // Add additional error handling - try to refresh the offer data
       try {
+        console.log('Attempting to refresh offer data after error');
         const refreshedOffer = await offerService.getOfferById(offerId);
         
         // Get the offer ID as string
         const refreshedId = idToString(refreshedOffer._id);
+        console.log('Successfully refreshed offer with ID:', refreshedId);
         
         set((state) => ({
           activeOffers: {
@@ -263,22 +291,36 @@ const useOfferStore = create<OfferState>((set, get) => ({
   },
   
   getOfferById: (offerId: string) => {
-    const { activeOffers } = get();
-    return activeOffers[offerId] || null;
+    console.log('getOfferById - Looking for offer with ID:', offerId);
+    console.log('Available offer IDs in store:', Object.keys(get().activeOffers));
+    
+    const offer = get().activeOffers[offerId];
+    
+    if (!offer) {
+      console.warn(`getOfferById - Offer with ID ${offerId} not found in store`);
+      return null;
+    }
+    
+    console.log('getOfferById - Found offer:', offer._id);
+    return offer;
   },
   
   loadOffer: async (offerId: string) => {
     set({ error: null });
+    console.log('loadOffer - Starting to fetch offer with ID:', offerId);
+    
     try {
-      console.log('offerStore: loadOffer - Attempting to fetch offer ID:', offerId);
       const offer = await offerService.getOfferById(offerId);
-      console.log('offerStore: loadOffer - Successfully fetched offer ID:', offerId, 'Response type:', typeof offer, 'Response:', offer);
+      console.log('loadOffer - Service response:', offer);
+      console.log('loadOffer - Offer ID in response:', offer._id, 'type:', typeof offer._id);
       
       // Get the offer ID as string
       const responseId = idToString(offer._id);
+      console.log('loadOffer - Converted ID:', responseId);
       
       // Adapt the offer to our application's type
       const adaptedOffer = adaptServiceOffer(offer);
+      console.log('loadOffer - Adapted offer ID:', adaptedOffer._id);
       
       set(state => ({
         activeOffers: {
@@ -290,6 +332,11 @@ const useOfferStore = create<OfferState>((set, get) => ({
       return adaptedOffer;
     } catch (error: any) {
       console.error(`Error loading offer ${offerId}:`, error);
+      console.error('Error details:', error.message);
+      if (error.response) {
+        console.error('Server response:', error.response.data);
+      }
+      
       set({ error: error.message || 'Failed to load offer' });
       throw error;
     }
@@ -297,16 +344,21 @@ const useOfferStore = create<OfferState>((set, get) => ({
   
   loadUserOffers: async () => {
     set({ error: null });
+    console.log('loadUserOffers - Starting to fetch user offers');
+    
     try {
       const offers = await offerService.getUserOffers();
+      console.log('loadUserOffers - Received offers count:', offers.length);
       
       // Create a map from the array of offers
       const offersMap: Record<string, Offer> = {};
       offers.forEach(offer => {
         const offerId = idToString(offer._id);
+        console.log('loadUserOffers - Processing offer ID:', offerId);
         offersMap[offerId] = adaptServiceOffer(offer);
       });
       
+      console.log('loadUserOffers - Offer IDs in map:', Object.keys(offersMap));
       set({ activeOffers: offersMap });
       return adaptServiceOfferArray(offers);
     } catch (error: any) {
@@ -318,13 +370,17 @@ const useOfferStore = create<OfferState>((set, get) => ({
   
   loadPropertyOffers: async (propertyId: string) => {
     set({ error: null });
+    console.log('loadPropertyOffers - Starting to fetch offers for property:', propertyId);
+    
     try {
       const offers = await offerService.getPropertyOffers(propertyId);
+      console.log('loadPropertyOffers - Received offers count:', offers.length);
       
       // Update the store with the fetched offers
       const updatedOffers = { ...get().activeOffers };
       offers.forEach(offer => {
         const offerId = idToString(offer._id);
+        console.log('loadPropertyOffers - Processing offer ID:', offerId);
         updatedOffers[offerId] = adaptServiceOffer(offer);
       });
       
@@ -338,6 +394,7 @@ const useOfferStore = create<OfferState>((set, get) => ({
   },
   
   clearOffers: () => {
+    console.log('clearOffers - Clearing all offers from store');
     set({ activeOffers: {} });
   },
   

@@ -15,10 +15,12 @@ module.exports = {
         'red': '#FF0000',
         'desertclay': '#B17457',
         'green': '#00FF00',
+        'seagreen':'#4C956C',
         'milk': '#F9F7F0',
         'lightstone': '#DBD2C2',
         'graphite': '#4A4947',
         'rustyred': '#d43545',
+        
       },
       fontFamily: {
         'helvetica-regular': ['Helvetica-Regular', 'sans-serif'],

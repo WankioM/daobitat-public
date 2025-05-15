@@ -1,7 +1,7 @@
 // src/components/Properties/PropertyCard.tsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaBed, FaBath, FaRuler, FaTrash } from 'react-icons/fa';
+import { FaBed, FaBath, FaRuler, FaTrash, FaFileAlt } from 'react-icons/fa';
 import { BiBuildingHouse } from 'react-icons/bi';
 import DeleteConfirmation from './DeleteConfirmation';
 import PropertyFocus from './PropertyFocus';
@@ -12,9 +12,11 @@ interface PropertyCardProps {
   property: Property;
   onDelete: (propertyId: string) => void;
   onPropertyUpdated: () => void;
+  onSelectProperty: (propertyId: string) => void;
+  onSwitchTab: (tab: string) => void;
 }
 
-export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onDelete, onPropertyUpdated }) => {
+export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onDelete, onPropertyUpdated ,onSelectProperty, onSwitchTab }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showFocusModal, setShowFocusModal] = useState(false);
 
@@ -49,6 +51,23 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property, onDelete, 
             >
               <FaTrash size={16} />
             </button>
+            <div className="absolute top-2 left-12 flex items-center justify-center">
+  <div className="absolute w-10 h-10 bg-rustyred/30 rounded-full animate-pulse"></div>
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onSelectProperty(property._id);
+      onSwitchTab('Documents');
+    }}
+    className="relative z-10 p-2 bg-rustyred text-white rounded-full hover:bg-rustyred/80 transition-colors group"
+    title="Verify & Upload Documents"
+  >
+    <FaFileAlt size={16} />
+    <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap">
+      Upload & Verify Documents
+    </div>
+  </button>
+</div>
           </div>
           
           <div className="p-4">

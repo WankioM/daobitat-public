@@ -1,34 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import { FaMobile, FaSpinner, FaCheck, FaTimes, FaPhoneAlt } from 'react-icons/fa';
+import PaymentService from '../../../services/paymentService';
 
 interface MPesaPaymentProps {
   amount: number;
   offerId: string;
   onSuccess: () => void;
+  paymentType?: 'rent' | 'deposit';
 }
 
-type PaymentStage = 'input' | 'pushed' | 'confirming' | 'failed';
+type PaymentStage = 'input' | 'pushed' | 'confirming' | 'completed' | 'failed';
 
-const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId }) => {
+const MPesaPayment: React.FC<MPesaPaymentProps> = ({ 
+  amount, 
+  offerId, 
+  onSuccess, 
+  paymentType = 'rent'
+}) => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [stage, setStage] = useState<PaymentStage>('input');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [timeLeft, setTimeLeft] = useState(60); // 60 seconds timeout
   const [checkCount, setCheckCount] = useState(0);
+  const [paymentId, setPaymentId] = useState('');
+  const [checkoutRequestId, setCheckoutRequestId] = useState('');
 
+  // Timer for countdown and automatic status checking
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    if (stage === 'pushed' && timeLeft > 0) {
-      timer = setInterval(() => {
-        setTimeLeft(prev => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0 && stage === 'pushed') {
-      setStage('failed');
-      setErrorMessage('Payment request timed out. Please try again.');
+    
+    if (stage === 'pushed') {
+      // Set up the countdown timer
+      if (timeLeft > 0) {
+        timer = setInterval(() => {
+          setTimeLeft(prev => prev - 1);
+        }, 1000);
+      } else {
+        setStage('failed');
+        setErrorMessage('Payment request timed out. Please try again.');
+      }
+      
+      // Set up automatic status checking every 5 seconds
+      if (paymentId && checkoutRequestId) {
+        const statusTimer = setInterval(() => {
+          checkPaymentStatus();
+        }, 5000);
+        
+        // Clean up the status timer
+        return () => {
+          clearInterval(statusTimer);
+          clearInterval(timer);
+        };
+      }
     }
+    
     return () => clearInterval(timer);
-  }, [stage, timeLeft]);
+  }, [stage, timeLeft, paymentId, checkoutRequestId]);
 
   const formatPhoneNumber = (input: string): string => {
     // Remove all non-digits
@@ -69,36 +97,96 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
     setIsProcessing(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the PaymentService to initiate M-PESA payment
+      const response = await PaymentService.initializeMpesaPayment({
+        offerId,
+        amount,
+        phoneNumber: phoneNumber.replace(/\s/g, ''),
+        paymentType
+      });
       
-      setStage('pushed');
-      setTimeLeft(60);
-    } catch (error) {
-      setErrorMessage('Failed to initiate payment. Please try again.');
+      if (response.status === 'success' && response.data) {
+        // Store payment ID and checkout request ID for status checking
+        setPaymentId(response.data.paymentId);
+        setCheckoutRequestId(response.data.checkoutRequestID);
+        
+        // Update stage to pushed
+        setStage('pushed');
+        setTimeLeft(60);
+        
+        console.log('M-PESA payment initiated:', response.data);
+      } else {
+        throw new Error(response.message || 'Failed to initiate payment');
+      }
+    } catch (error: any) {
+      console.error('M-PESA payment initiation error:', error);
+      setErrorMessage(error.message || 'Failed to initiate payment. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleCheckPayment = async () => {
+  const checkPaymentStatus = async () => {
+    if (!paymentId || !checkoutRequestId) return;
+    
+    try {
+      // Check payment status without showing loading state
+      const response = await PaymentService.checkMpesaPaymentStatus(
+        paymentId, 
+        checkoutRequestId
+      );
+      
+      console.log('Payment status check response:', response);
+      
+      if (response.status === 'success' && response.data) {
+        if (response.data.paymentStatus === 'completed') {
+          // Payment successful - update escrow
+          if (response.data.transactionId) {
+            await updateEscrow(response.data.transactionId);
+          }
+          
+          // Set completed stage
+          setStage('completed');
+          setTimeout(() => onSuccess(), 1500);
+        } else if (response.data.paymentStatus === 'failed') {
+          // Payment failed
+          setStage('failed');
+          setErrorMessage('Payment was not successful. Please try again.');
+        }
+        // If still pending, keep waiting
+      }
+    } catch (error) {
+      console.error('Payment status check error:', error);
+      // Don't show error message for automatic checks
+    }
+  };
+
+  const updateEscrow = async (transactionId: string) => {
+    try {
+      // Update the escrow contract with the M-PESA payment
+      await PaymentService.updateEscrowWithMpesaPayment(paymentId, transactionId);
+    } catch (error) {
+      console.error('Error updating escrow:', error);
+      // Continue even if escrow update fails - payment was successful
+    }
+  };
+
+  const handleManualCheck = async () => {
     setIsProcessing(true);
     setCheckCount(prev => prev + 1);
 
     try {
-      // Simulate checking payment status
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await checkPaymentStatus();
       
-      // Simulate success after 2 checks
-      if (checkCount >= 1) {
+      // If we're still here and not redirected, payment is still pending
+      if (checkCount >= 2) {
+        // After 3 manual checks, show confirming state while we continue to poll
         setStage('confirming');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        onSuccess();
       } else {
-        setErrorMessage('Payment not received yet. Please try again after entering your PIN.');
+        setErrorMessage(`Payment not received yet. Please make sure you've entered your PIN.`);
       }
-    } catch (error) {
-      setErrorMessage('Failed to confirm payment. Please try again.');
+    } catch (error: any) {
+      setErrorMessage(error.message || 'Failed to confirm payment. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -109,6 +197,8 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
     setErrorMessage('');
     setTimeLeft(60);
     setCheckCount(0);
+    setPaymentId('');
+    setCheckoutRequestId('');
   };
 
   const renderPaymentStage = () => {
@@ -138,7 +228,7 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
 
             <button
               onClick={handleInitiate}
-              disabled={isProcessing || !validatePhoneNumber(phoneNumber)}
+              disabled={isProcessing || !validatePhoneNumber(phoneNumber.replace(/\s/g, ''))}
               className="w-full py-3 bg-celadon text-white rounded-lg hover:bg-opacity-90 
                        disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
@@ -185,11 +275,12 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
 
             <div className="flex gap-2">
               <button
-                onClick={handleCheckPayment}
+                onClick={handleManualCheck}
                 disabled={isProcessing}
                 className="flex-1 py-3 bg-celadon text-white rounded-lg hover:bg-opacity-90 
-                         disabled:opacity-50 disabled:cursor-not-allowed"
+                         disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
+                {isProcessing ? <FaSpinner className="animate-spin mr-2" /> : null}
                 {isProcessing ? 'Checking...' : 'I\'ve Entered PIN'}
               </button>
               <button
@@ -227,9 +318,23 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
 
       case 'confirming':
         return (
-          <div className="text-center">
+          <div className="text-center space-y-4">
             <FaSpinner className="animate-spin text-3xl text-celadon mx-auto" />
             <p className="mt-4">Confirming your payment...</p>
+            <p className="text-sm text-gray-500">
+              This may take a moment. Please don't close this window.
+            </p>
+          </div>
+        );
+
+      case 'completed':
+        return (
+          <div className="text-center space-y-4">
+            <div className="rounded-full bg-green-100 p-3 w-16 h-16 mx-auto">
+              <FaCheck className="text-3xl text-green-600 m-2" />
+            </div>
+            <h4 className="font-medium">Payment Successful!</h4>
+            <p className="text-sm text-gray-600">Your payment has been processed successfully.</p>
           </div>
         );
     }
@@ -250,6 +355,11 @@ const MPesaPayment: React.FC<MPesaPaymentProps> = ({ amount, onSuccess, offerId 
           <span className="text-gray-600">Amount to Pay</span>
           <span className="font-semibold text-lg">KSh {amount.toLocaleString()}</span>
         </div>
+        {paymentType === 'deposit' && (
+          <p className="text-xs text-gray-500 mt-1">
+            Includes security deposit and first month's rent
+          </p>
+        )}
       </div>
 
       {renderPaymentStage()}

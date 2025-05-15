@@ -76,7 +76,7 @@ const Footer = () => {
               Quick Links
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              {['Buy', 'Rent', 'Sell', 'Advertise', 'Financing', 'About'].map((item) => (
+              {['Buy', 'Rent', 'Sell', 'How Smart Contracts Work', 'Financing', 'About'].map((item) => (
                 <a
                   key={item}
                   href={`#${item.toLowerCase()}`}

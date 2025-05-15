@@ -60,31 +60,36 @@ export class PaymentService {
     }
   }
 
-  /**
+  // Updated recordOffPlatformPayment method for paymentService.ts
+
+/**
  * Record an off-platform payment
  */
 static async recordOffPlatformPayment(data: any): Promise<ApiResponse<Payment>> {
   try {
-    // Create a request that matches exactly what the controller extracts and uses
-    // Based on paymentController.recordOffPlatformPayment implementation
+    // Make sure we have a payment date in ISO format
+    if (!data.paymentDate) {
+      data.paymentDate = new Date().toISOString();
+    }
+    
+    // Create a request that matches exactly what the backend controller expects
     const request = {
-      // Primary fields that controller explicitly extracts
+      // Primary fields that controller explicitly requires
       offerId: data.offerId,
       amount: data.amount,
       paymentMethod: data.paymentMethod || 'cash',
+      paymentDate: data.paymentDate,
       proofImageUrl: data.proofImageUrl || '',
       notes: data.notes || '',
-      billingCycle: data.billingCycle || 1,
       
-      // These fields are used by the controller but configured differently
-      type: 'rent',
-      currency: 'KES',
+      // Use transactionReference instead of reference
+      transactionReference: data.transactionReference || data.reference || '',
       
-      // Add metadata if needed
-      metadata: {
-        paymentType: 'offPlatform',
-        paymentReference: data.reference || ''
-      }
+      // Include these required fields
+      type: data.type || 'rent',
+      currency: data.currency || 'KES',
+      currencySymbol: data.currencySymbol || 'KES',
+      billingCycle: data.billingCycle || 1
     };
     
     console.log('Final payment request to send:', JSON.stringify(request));
@@ -96,15 +101,83 @@ static async recordOffPlatformPayment(data: any): Promise<ApiResponse<Payment>> 
     throw error;
   }
 }
+  
+
+/**
+ * Verify an off-platform payment
+ * The correct endpoint should be: /api/payment/:paymentId/verify-off-platform
+ */
+static async verifyOffPlatformPayment(paymentId: string, data: OffPlatformVerificationRequest): Promise<ApiResponse<Payment>> {
+  try {
+    console.log('verifyOffPlatformPayment - Verifying payment ID:', paymentId);
+    
+    const request = {
+      verificationStatus: data.verificationStatus || (data.verified ? 'verified' : 'rejected'),
+      notes: data.notes || '',
+      rejectionReason: data.rejectionReason || ''
+    };
+    
+    console.log('Verification request:', request);
+    
+    // Use the correct endpoint format with paymentId
+    const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/api/payment/${paymentId}/verify-off-platform`, request);
+    console.log('verifyOffPlatformPayment - Success. Response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to verify off-platform payment:', error);
+    throw error;
+  }
+}
+
+
+/**
+ * Reject an off-platform payment
+ */
+static async rejectOffPlatformPayment(paymentId: string, data: OffPlatformVerificationRequest): Promise<ApiResponse<Payment>> {
+  try {
+    console.log('rejectOffPlatformPayment - Rejecting payment ID:', paymentId);
+    
+    // Create a proper rejection request - ensuring verificationStatus is the correct type
+    const rejectRequest: OffPlatformVerificationRequest = {
+      ...data,
+      verified: false,
+      verificationStatus: 'rejected', // Using the literal 'rejected' to match the type
+      rejectionReason: data.rejectionReason || 'Payment rejected by landlord'
+    };
+    
+    // Reuse the verification endpoint
+    return await this.verifyOffPlatformPayment(paymentId, rejectRequest);
+  } catch (error) {
+    console.error('Failed to reject off-platform payment:', error);
+    throw error;
+  }
+}
   /**
-   * Verify an off-platform payment
+   * Get pending payments that need verification
    */
-  static async verifyOffPlatformPayment(paymentId: string, data: OffPlatformVerificationRequest): Promise<ApiResponse<Payment>> {
+  static async getPendingPaymentsForVerification(): Promise<ApiResponse<Payment[]>> {
     try {
-      const response: AxiosResponse<ApiResponse<Payment>> = await api.post(`/api/payment/${paymentId}/verify-off-platform`, data);
+      console.log('getPendingPaymentsForVerification - Fetching pending payments');
+      const response: AxiosResponse<ApiResponse<Payment[]>> = await api.get('/api/payment/pending-verification');
+      console.log(`getPendingPaymentsForVerification - Found ${response.data.data?.length || 0} pending payments`);
       return response.data;
     } catch (error) {
-      console.error('Failed to verify off-platform payment:', error);
+      console.error('Failed to get pending payments for verification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get pending payments for a specific offer
+   */
+  static async getPendingPaymentsForOffer(offerId: string): Promise<ApiResponse<Payment[]>> {
+    try {
+      console.log('getPendingPaymentsForOffer - Fetching pending payments for offer:', offerId);
+      const response: AxiosResponse<ApiResponse<Payment[]>> = await api.get(`/api/payment/offer/${offerId}/pending`);
+      console.log(`getPendingPaymentsForOffer - Found ${response.data.data?.length || 0} pending payments`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to get pending payments for offer:', error);
       throw error;
     }
   }
@@ -332,6 +405,134 @@ static async recordOffPlatformPayment(data: any): Promise<ApiResponse<Payment>> 
       throw error;
     }
   }
+
+  // Add these methods to your PaymentService class in paymentService.ts
+
+/**
+ * Initialize an M-PESA payment
+ * @param data Payment data including offerId, amount, and phoneNumber
+ * @returns Response from the M-PESA initialization API
+ */
+static async initializeMpesaPayment(data: {
+  offerId: string;
+  amount: number;
+  phoneNumber: string;
+  paymentType?: 'rent' | 'deposit';
+}): Promise<ApiResponse<any>> {
+  try {
+    console.log('Initializing M-PESA payment:', data);
+    
+    // Format phone number to ensure it's in the correct format
+    let phoneNumber = data.phoneNumber.replace(/\D/g, '');
+    
+    // Ensure phone number starts with 254
+    if (phoneNumber.startsWith('0')) {
+      phoneNumber = '254' + phoneNumber.substring(1);
+    } else if (!phoneNumber.startsWith('254')) {
+      phoneNumber = '254' + phoneNumber;
+    }
+    
+    const payload = {
+      offerId: data.offerId,
+      amount: data.amount,
+      phoneNumber: phoneNumber,
+      paymentType: data.paymentType || 'rent'
+    };
+    
+    // Call the backend API to initiate M-PESA payment
+    const response: AxiosResponse<ApiResponse<any>> = await api.post(
+      '/api/payment/mpesa/initiate', 
+      payload
+    );
+    
+    console.log('M-PESA payment initiation response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('M-PESA payment initialization failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check the status of an M-PESA payment
+ * @param paymentId The ID of the payment to check
+ * @param checkoutRequestId The M-PESA checkout request ID
+ * @returns The current status of the payment
+ */
+static async checkMpesaPaymentStatus(paymentId: string, checkoutRequestId: string): Promise<ApiResponse<any>> {
+  try {
+    console.log('Checking M-PESA payment status:', { paymentId, checkoutRequestId });
+    
+    // Get payment details to check its status
+    const response: AxiosResponse<ApiResponse<Payment>> = await api.get(
+      `/api/payment/${paymentId}`
+    );
+    
+    const payment = response.data.data;
+    
+    // If payment has been processed successfully, return it
+    if (payment && (payment.status === 'completed' || payment.status === 'failed')) {
+      return {
+        status: 'success',
+        data: {
+          paymentId: paymentId,
+          checkoutRequestId: checkoutRequestId,
+          paymentStatus: payment.status,
+          transactionId: payment.transactionId || null
+        },
+        message: payment.status === 'completed' ? 
+          'Payment has been processed successfully' : 
+          'Payment has failed'
+      };
+    }
+    
+    // If payment is still pending, return that status
+    return {
+      status: 'success',
+      data: {
+        paymentId: paymentId,
+        checkoutRequestId: checkoutRequestId,
+        paymentStatus: 'pending',
+        transactionId: null
+      },
+      message: 'Payment is still being processed'
+    };
+  } catch (error) {
+    console.error('Failed to check M-PESA payment status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update the smart contract with the M-PESA payment
+ * This connects the M-PESA payment to the blockchain escrow
+ * @param paymentId The ID of the completed payment
+ * @param transactionId The M-PESA transaction ID/receipt number
+ */
+static async updateEscrowWithMpesaPayment(paymentId: string, transactionId: string): Promise<ApiResponse<any>> {
+  try {
+    console.log('Updating escrow with M-PESA payment:', { paymentId, transactionId });
+    
+    // Create escrow update request
+    const escrowUpdateData: EscrowUpdateRequest = {
+      contractAddress: '', // Will be determined by backend
+      transactionHash: transactionId,
+      escrowStatus: 'funded', // Assuming payment success means escrow is funded
+      notes: `M-PESA payment confirmed with transaction ID: ${transactionId}`
+    };
+    
+    // Update the payment's escrow details
+    const response = await this.updatePaymentEscrowDetails(paymentId, escrowUpdateData);
+    
+    console.log('Escrow update response:', response);
+    return response;
+  } catch (error) {
+    console.error('Failed to update escrow with M-PESA payment:', error);
+    throw error;
+  }
+}
+
+
 }
 
 export default PaymentService;

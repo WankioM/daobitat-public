@@ -56,6 +56,24 @@ export interface VerificationDetails {
   verifiedBy?: ID;
 }
 
+export interface PaymentProof {
+  offerId: string;
+  paymentId?: string;
+  imageUrl?: string;
+  method?: string;
+  amount: number;
+  currency?: string;
+  reference?: string;
+  date?: Date;
+  notes?: string;
+  verified?: boolean;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  pendingVerification?: boolean;
+  rejectionReason?: string;
+  transactionHash?: string;
+}
+
 // Off-platform payment details
 export interface OffPlatformDetails {
   proofImageUrl: string;
@@ -72,6 +90,7 @@ export interface SmartContractDetails {
   contractAddress: string;
   agreementId: string;
   escrowStatus: string;
+  transactionHash?: string;
 }
 
 // Timeline event
@@ -145,23 +164,31 @@ export interface OffPlatformPaymentRequest {
   proofImageUrl: string;
   notes?: string;
   paymentMethod: string;
+  transactionReference?: string; 
+  bankName?: string; 
   billingCycle?: number;
+  currencySymbol?: string; 
+  smartContractDetails?: SmartContractDetails;
   metadata?: Record<string, any>;
 }
 
 // Off-platform verification request
 export interface OffPlatformVerificationRequest {
-  verificationStatus: VerificationStatus;
+  verified: boolean;
+  verificationStatus?: 'verified' | 'rejected';
   notes?: string;
+  adminAction?: boolean;
+  rejectionReason?: string;
 }
 
-// Escrow update request
 export interface EscrowUpdateRequest {
   escrowStatus: string;
   escrowId?: string;
   contractAddress?: string;
   releaseDate?: string;
   agreementId?: string;
+  transactionHash?: string; 
+  notes?: string;
 }
 
 // Refund request
@@ -209,8 +236,8 @@ export interface PaymentDetailsResponse {
 
 // API response type
 export interface ApiResponse<T> {
-  status: string;
-  data: T;
+  status: 'success' | 'error';
+  data?: T;
   message?: string;
 }
 

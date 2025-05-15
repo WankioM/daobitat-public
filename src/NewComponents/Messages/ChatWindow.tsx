@@ -9,6 +9,7 @@ import { useUser } from '../../NewContexts/UserContext';
 import TextMessage from './TextMessage';
 import StatefulOfferCard from './StatefulOfferCard';
 import useOfferStore, { OfferAction } from '../../store/offerStore';
+import PaymentVerificationMessage from './PaymentVerificationMessage';
 
 interface ChatWindowProps {
   contact: ChatContact | null;
@@ -58,6 +59,28 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
   const [sendingMessage, setSendingMessage] = useState(false);
   const [offerProcessing, setOfferProcessing] = useState(false);
   const [filteredMessages, setFilteredMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    // Log specifically messages with payment proofs for debugging
+    const paymentMessages = messages.filter(m => 
+      m.type === 'payment_proof' || 
+      m.type === 'payment_request' || 
+      m.paymentProof
+    );
+    
+    if (paymentMessages.length > 0) {
+      console.log('🔍 Payment-related messages found:', paymentMessages.map(m => ({
+        id: m._id,
+        type: m.type,
+        paymentProof: {
+          offerId: m.paymentProof?.offerId,
+          method: m.paymentProof?.method,
+          amount: m.paymentProof?.amount,
+          verified: m.paymentProof?.verified
+        }
+      })));
+    }
+  }, [messages]);
   
   // Filter out offer messages when pinned offer is present
   useEffect(() => {
@@ -79,6 +102,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({
       setFilteredMessages(messages);
     }
   }, [messages, pinnedOffer]);
+  useEffect(() => {
+    if (messages && messages.length > 0) {
+      console.log('Message types in chat:', messages.map(m => ({
+        id: m._id,
+        type: m.type,
+        hasPaymentProof: !!m.paymentProof,
+        paymentProof: m.paymentProof
+      })));
+    }
+  }, [messages]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -250,25 +283,36 @@ const handleOfferAction = async (action: OfferAction, offerId: string, data?: an
         ) : (
           <>
             {filteredMessages.map((message: Message) => {
-              // Safely compare IDs
-              const senderID = idToString(safeGetId(message.sender));
-              const userID = user ? idToString(safeGetId(user._id)) : '';
-              const isOwn = userID === senderID;
-              
-              // Generate a unique key for each message
-              const messageKey = typeof message._id === 'string' 
-                ? message._id 
-                : message._id ? JSON.stringify(message._id) : `msg-${Date.now()}-${Math.random()}`;
-              
-              // Only display text messages
-              return (
-                <TextMessage 
-                  key={messageKey} 
-                  message={message} 
-                  isOwn={isOwn} 
-                />
-              );
-            })}
+  // Safely compare IDs
+  const senderID = idToString(safeGetId(message.sender));
+  const userID = user ? idToString(safeGetId(user._id)) : '';
+  const isOwn = userID === senderID;
+  
+  // Generate a unique key for each message
+  const messageKey = typeof message._id === 'string' 
+    ? message._id 
+    : message._id ? JSON.stringify(message._id) : `msg-${Date.now()}-${Math.random()}`;
+  
+  // Render message based on type
+  if (message.type === 'payment_proof' || message.type === 'payment_request') {
+    return (
+      <PaymentVerificationMessage
+        key={messageKey}
+        message={message}
+        isOwn={isOwn}
+        onVerified={onRefreshMessages}
+      />
+    );
+  } else {
+    return (
+      <TextMessage 
+        key={messageKey} 
+        message={message} 
+        isOwn={isOwn} 
+      />
+    );
+  }
+})}
             <div ref={messagesEndRef} />
           </>
         )}

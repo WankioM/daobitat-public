@@ -9,8 +9,10 @@ import Messages from '../Messages/Messages';
 import WishList from './WishList/WishList';
 import LeaseManagement from '../PaymentFlow/Lease/LeaseManagement';
 import PlotInDev from '../PaymentFlow/InDev/PlotInDev';
+import HowSmartContractsWork from '../Docs/HowSmartContract/HowSmartContract';
+import PropertyDocuments from './Properties/Documents/PropertyDocuments';
 
-export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'ActiveLeases' | 'PaymentFlow';
+export type TabType = 'AccountInfo' | 'Properties' | 'Messages' | 'Wishlist' | 'Billings' | 'ActiveLeases' | 'PaymentFlow' | 'Documents' | 'HowSmartContractsWork';
 
 const ListerDashboard: React.FC = () => {
   const location = useLocation();
@@ -19,6 +21,7 @@ const ListerDashboard: React.FC = () => {
   const { user } = useUser();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [initialPaymentSection, setInitialPaymentSection] = useState<'Payments' | 'Ownership' | 'Security'>('Payments');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('');
 
   useEffect(() => {
     // Wait a moment for user data to load before deciding to redirect
@@ -65,7 +68,10 @@ const ListerDashboard: React.FC = () => {
       case 'AccountInfo':
         return <AccountInfo />;
       case 'Properties':
-        return <Properties />;
+        return <Properties 
+        setSelectedPropertyId={setSelectedPropertyId} 
+        setActiveTab={setActiveTab} 
+      />;
       case 'Messages':
         return <Messages />;
       case 'Wishlist':
@@ -75,10 +81,17 @@ const ListerDashboard: React.FC = () => {
       
       case 'ActiveLeases':
         return <LeaseManagement />;
-        case 'PaymentFlow':
+      case 'PaymentFlow':
       return <PlotInDev initialSection={initialPaymentSection} />;
+      case 'Documents':
+        return <PropertyDocuments propertyId={selectedPropertyId} />;
+      case 'HowSmartContractsWork':
+        return <HowSmartContractsWork />;
       default:
-        return <Properties />;
+        return <Properties 
+          setSelectedPropertyId={setSelectedPropertyId} 
+          setActiveTab={setActiveTab} 
+        />;
     }
   };
 

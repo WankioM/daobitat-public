@@ -77,62 +77,74 @@ const OffPlatformPayment: React.FC<OffPlatformPaymentProps> = ({
 
   
   // Submit form
+// Updated handleSubmit function for OffPlatformPayment.tsx
+
 const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate offerId
-    if (!offerId) {
-      setErrorMessage('Invalid offer ID. Please refresh and try again.');
-      return;
-    }
-    
-    setIsProcessing(true);
-    setErrorMessage(null);
+  e.preventDefault();
   
-    try {
-      // First, upload the proof image if provided
-      let proofImageUrl = '';
-      if (paymentProof) {
-        setUploadingFile(true);
-        try {
-          proofImageUrl = await uploadImageToGCS(paymentProof);
-          setUploadingFile(false);
-        } catch (uploadError) {
-          setUploadingFile(false);
-          throw new Error('Failed to upload payment proof. Please try again.');
-        }
+  // Validate offerId
+  if (!offerId) {
+    setErrorMessage('Invalid offer ID. Please refresh and try again.');
+    return;
+  }
+  
+  setIsProcessing(true);
+  setErrorMessage(null);
+
+  try {
+    // First, upload the proof image if provided
+    let proofImageUrl = '';
+    if (paymentProof) {
+      setUploadingFile(true);
+      try {
+        proofImageUrl = await uploadImageToGCS(paymentProof);
+        setUploadingFile(false);
+      } catch (uploadError) {
+        setUploadingFile(false);
+        throw new Error('Failed to upload payment proof. Please try again.');
       }
-  
-      // Simplified payment data that matches exactly what the controller expects
-      const paymentData = {
-        offerId,
-        amount,
-        paymentMethod: paymentMethod || 'cash',
-        proofImageUrl,
-        notes: notes || `Payment made via ${paymentMethod || 'cash'}`,
-        reference: reference || '',
-        // The following fields are used in controller.recordOffPlatformPayment
-        // but might not be directly mapped to the Payment model
-        type: 'rent',
-        currency: 'KES', 
-        currencySymbol: 'KES',
-        billingCycle: 1,
-        isOffPlatform: true
-      };
-  
-      // Record the payment using PaymentService
-      console.log('Recording off-platform payment:', paymentData);
-      const response = await PaymentService.recordOffPlatformPayment(paymentData);
-      
-      console.log('Payment recorded successfully:', response);
-      onSuccess();
-    } catch (error: any) {
-      console.error('Off-platform payment error:', error);
-      setErrorMessage(error.message || 'Failed to submit payment. Please try again.');
-    } finally {
-      setIsProcessing(false);
     }
-  };
+
+    // Create ISO formatted date string for current time
+    const paymentDate = new Date().toISOString();
+
+    // Create payment data object that matches exactly what the backend expects
+    const paymentData = {
+      offerId,
+      amount,
+      paymentMethod: paymentMethod || 'cash',
+      proofImageUrl,
+      paymentDate, // Add ISO formatted date
+      notes: notes || `Payment made via ${paymentMethod || 'cash'}`,
+      transactionReference: reference || '', // Use transactionReference instead of reference
+      type: 'rent',
+      currency: 'KES',
+      currencySymbol: 'KES',
+      billingCycle: 1,
+    };
+
+    // Log the payment data for debugging
+    console.log('Submitting payment with data:', paymentData);
+    
+    // Record the payment using PaymentService
+    const response = await PaymentService.recordOffPlatformPayment(paymentData);
+    
+    console.log('Payment recorded successfully:', response);
+    onSuccess();
+  } catch (error: any) {
+    console.error('Off-platform payment error:', error);
+    
+    // Enhanced error handling
+    if (error.response && error.response.data) {
+      const serverError = error.response.data.message || error.response.data;
+      setErrorMessage(`Server error: ${serverError}`);
+    } else {
+      setErrorMessage(error.message || 'Failed to submit payment. Please try again.');
+    }
+  } finally {
+    setIsProcessing(false);
+  }
+};
 
   return (
     <div className="border rounded-lg p-6 space-y-6">

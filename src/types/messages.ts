@@ -7,6 +7,24 @@ import {
 import { MessageType } from './offerstatusenums';
 import { Offer } from './offers';
 
+export interface PaymentProof {
+  offerId: string;
+  paymentId?: string;
+  imageUrl?: string;
+  method?: string;
+  amount: number;
+  currency?: string;
+  reference?: string;
+  date?: Date;
+  notes?: string;
+  verified?: boolean;
+  verifiedBy?: string;
+  verifiedAt?: Date;
+  pendingVerification?: boolean;
+  rejectionReason?: string;
+  transactionHash?: string;
+}
+
 // Base message interface for both frontend and backend
 export interface BaseMessage {
   _id: ID;
@@ -37,18 +55,7 @@ export interface BaseMessage {
     currentBillingCycle?: number;
     totalBillingCycles?: number;
   };
-  paymentProof?: {
-    offerId: ID;
-    imageUrl: string;
-    method: string;
-    amount: number;
-    reference: string;
-    date: Date | string;
-    notes: string;
-    verified: boolean;
-    verifiedBy?: ID | User;
-    verifiedAt?: Date | string;
-  };
+  paymentProof?: PaymentProof;
   createdAt: Date | string;
   updatedAt?: Date | string;
 }
