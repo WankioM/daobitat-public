@@ -61,19 +61,63 @@ Our platform utilizes four primary MongoDB collections:
 
 ### Deployed Contracts
 
-1. **Property Verification Contract** (`0x46AEcA1b0804FbE7D8722E09E774AB163D4b0Da5`)
-   - Verifies real estate properties on the blockchain
-   - Maintains immutable ownership records
-   - Tracks property updates and transfers
-   - Enables trusted verification by approved addresses
-   - Functions include `registerProperty()`, `verifyProperty()`, `transferOwnership()`
+1. PropertySBT (Soulbound Token)
+Contract Address: 0x8b36a06aed7399215ccd885c84129f693b06e4d2
+The PropertySBT contract creates immutable identity tokens for each property, representing the fundamental identity that cannot be transferred. This ensures that every property has a permanent, verifiable record on the blockchain.
+Key Features:
 
-2. **Rental Escrow Contract** (`0x5942c3c250ddeaacd69d1ab7ccd81c261cf15204`)
-   - Secures rental transactions between landlords and tenants
-   - Manages security deposits and rent payments
-   - Handles dispute resolution through arbitration
-   - Implements automated payment schedules
-   - Functions include `createRentalEscrow()`, `fundEscrow()`, `payRent()`, `returnSecurityDeposit()`
+Immutable property identification
+Stores essential property metadata (location, type, geohash)
+Links MongoDB property IDs to blockchain records
+Cannot be transferred (soulbound nature)
+
+2. PropertyOwnershipNFT
+Contract Address: 0x436aF69eDCc1eD181705e9CED981746b85a0D76E
+A transferable ERC-721 NFT that represents actual ownership rights to a property. Unlike the SBT, these tokens can be transferred to represent changes in ownership.
+Key Features:
+
+Transferable ownership representation
+Complete transfer history tracking
+Metadata management for ownership documents
+Integration with escrow for secure transfers
+
+3. PropertyRegistry (Central Coordinator)
+Contract Address: 0xf8790442f9fac3d3c3c016bd785021858c2d5a7c
+The central hub that coordinates interactions between all property-related contracts. It manages the relationship between SBTs, ownership NFTs, and verification status.
+Key Features:
+
+Unified property registration system
+Property verification management
+Ownership transfer coordination
+Metadata synchronization across contracts
+
+4. RentalEscrow (Payment Management)
+Contract Address: 0xa87fB252736E0D71C561E5167b0b47960785bCc6
+A sophisticated escrow system that manages rental agreements, payments, and disputes with automated billing cycles and security deposit handling.
+Key Features:
+
+Automated rental payment processing
+Security deposit management
+Dispute resolution system
+Multi-cycle billing automation
+Early lease termination support
+
+Contract Integration Flow
+mermaidgraph TD
+    A[Property Registration] --> B[PropertyRegistry]
+    B --> C[PropertySBT Minting]
+    B --> D[PropertyOwnershipNFT Minting]
+    B --> E[Property Verification]
+    
+    F[Rental Agreement] --> G[RentalEscrow Creation]
+    G --> H[Escrow Funding]
+    H --> I[Move-in Confirmation]
+    I --> J[Automated Billing Cycles]
+    
+    K[Ownership Transfer] --> B
+    B --> L[NFT Transfer via Registry]
+    
+    M[Dispute Resolution] --> G
 
 ### Planned Contract Deployments
 
