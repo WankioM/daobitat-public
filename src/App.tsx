@@ -18,7 +18,7 @@ import HeroPropertyFocus from './NewComponents/Recommendations/PropertyFocus/Her
 import OfferPage from './NewComponents/PaymentFlow/Offer/OfferPage';
 import PlotInDev from './NewComponents/PaymentFlow/InDev/PlotInDev';
 import PaymentFlowPage from './NewComponents/PaymentFlow/PaymentFlow';
-
+import HowSmartContractsWork from './NewComponents/Docs/HowSmartContract/HowSmartContract';
 const App: React.FC = () => {
   const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
   
@@ -39,6 +39,9 @@ const App: React.FC = () => {
             <Route path="/property/:id" element={<PropertyTab />} />
             <Route path="/property-details/:id" element={<HeroPropertyFocus />} />
             <Route path="/about" element={<AboutUs />} />
+            <Route path="/how-smart-contracts-work" element={<HowSmartContractsWork />} />
+            <Route path="/payment-flow" element={<PaymentFlowPage />} />
+            
             
             {/* Auth routes */}
             <Route path="/login" element={<SignIn />} />

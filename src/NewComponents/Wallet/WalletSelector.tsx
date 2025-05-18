@@ -7,35 +7,30 @@ interface WalletSelectorProps {
   onSelectWallet: (walletId: string) => void;
 }
 
+// More compact wallet list with proper icons and using Coinbase as first option
 const wallets = [
+  {
+    id: 'coinbase',
+    name: 'Coinbase Wallet',
+    icon: '/assets/wallets/coinbase.svg', // Update with your actual path
+    description: 'Connect to your Coinbase Wallet',
+    color: 'bg-blue-500'
+  },
   {
     id: 'metamask',
     name: 'MetaMask',
-    icon: '🦊',
+    icon: '/assets/wallets/metamask.svg',
     description: 'Connect to your MetaMask Wallet',
     color: 'bg-orange-500'
   },
   {
     id: 'rainbow',
     name: 'Rainbow',
-    icon: '🌈',
+    icon: '/assets/wallets/rainbow.svg',
     description: 'Connect to your Rainbow Wallet',
     color: 'bg-purple-500'
-  },
-  {
-    id: 'braavos',
-    name: 'Braavos',
-    icon: '🛡️',
-    description: 'Connect to your Braavos Wallet',
-    color: 'bg-blue-500'
-  },
-  {
-    id: 'argent',
-    name: 'Argent',
-    icon: '⚡',
-    description: 'Connect to your Argent Wallet',
-    color: 'bg-pink-500'
   }
+  // Keeping the list shorter to fit viewport better
 ];
 
 const WalletSelector: React.FC<WalletSelectorProps> = ({ isOpen, onClose, onSelectWallet }) => {
@@ -72,9 +67,9 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({ isOpen, onClose, onSele
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
       onClick={handleBackdropClick}
     >
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-auto">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-gray-900">Connect Wallet</h2>
           <button
             onClick={onClose}
@@ -84,30 +79,44 @@ const WalletSelector: React.FC<WalletSelectorProps> = ({ isOpen, onClose, onSele
           </button>
         </div>
 
-        {/* Wallet List */}
-        <div className="space-y-3">
+        {/* Description */}
+        <div className="mb-4 text-gray-600 text-sm">
+          <p>Connect your wallet to verify ownership of your properties and documents on the blockchain.</p>
+        </div>
+
+        {/* Wallet List - more compact */}
+        <div className="space-y-2">
           {wallets.map((wallet) => (
             <button
               key={wallet.id}
               onClick={() => onSelectWallet(wallet.id)}
-              className="w-full transform rounded-lg border border-gray-200 bg-white p-4 transition-all duration-200 hover:border-gray-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-gray-200"
+              className="w-full flex items-center p-3 rounded-lg border border-gray-200 bg-white hover:border-desertclay hover:shadow-sm focus:outline-none focus:ring-1 focus:ring-desertclay transition-all"
             >
-              <div className="flex items-center space-x-4">
-                <div className={`flex h-12 w-12 items-center justify-center rounded-full ${wallet.color}`}>
-                  <span className="text-2xl">{wallet.icon}</span>
-                </div>
-                <div className="flex-1 text-left">
-                  <h3 className="font-semibold text-gray-900">{wallet.name}</h3>
-                  <p className="text-sm text-gray-500">{wallet.description}</p>
-                </div>
+              <div className={`flex h-10 w-10 items-center justify-center rounded-full ${wallet.color} mr-3`}>
+                {/* Use text fallback if image is not available */}
+                {wallet.id === 'coinbase' && <span className="text-xl">🪙</span>}
+                {wallet.id === 'metamask' && <span className="text-xl">🦊</span>}
+                {wallet.id === 'rainbow' && <span className="text-xl">🌈</span>}
+              </div>
+              <div className="flex-1 text-left">
+                <h3 className="font-semibold text-gray-900">{wallet.name}</h3>
+                <p className="text-xs text-gray-500">Connect to your {wallet.name}</p>
               </div>
             </button>
           ))}
         </div>
 
-        {/* Footer - Optional */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          By connecting a wallet, you agree to our Terms of Service
+        {/* Benefits section - more compact */}
+        <div className="mt-4 pt-3 border-t border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-2">Benefits:</p>
+          <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside ml-1">
+            <li>Verify ownership of your properties on-chain</li>
+            <li>Secure your documents with blockchain verification</li>
+            <li>Easily prove authenticity to potential buyers/renters</li>
+          </ul>
+          <p className="mt-3 text-center text-xs text-gray-500">
+            By connecting a wallet, you agree to our Terms of Service
+          </p>
         </div>
       </div>
     </div>

@@ -1,26 +1,29 @@
-// src/services/walletService.ts
 import api from './api';
 import CoinbaseWalletSDK from '@coinbase/wallet-sdk';
 import { ethers } from 'ethers';
 
 // Types
 interface WalletConnection {
-  address: string;
+  address: string | null;
   connected: boolean;
+  verified?: boolean;
 }
 
-interface WalletVerification {
-  user: {
-    _id: string;
-    walletAddress: string;
-    isVerified: boolean;
-  };
+interface WalletUser {
+  _id: string;
+  walletAddress: string | null;
+  isVerified: boolean;
+}
+
+interface WalletResponse {
+  user: WalletUser;
 }
 
 class WalletService {
-  private sdk: any;
-  private provider: any;
-  private ethereum: any;
+  // Make these properties public and read-only to allow controlled access
+  public readonly sdk: any;
+  public readonly provider: any;
+  public readonly ethereum: any;
   
   constructor() {
     // Initialize SDK only in browser environment
@@ -29,7 +32,6 @@ class WalletService {
         this.sdk = new CoinbaseWalletSDK({
           appName: 'DAO-Bitat',
           appLogoUrl: `${window.location.origin}/logo.png`,
-      
         });
         
         // Set up Ethereum provider (Base Mainnet)
@@ -45,163 +47,107 @@ class WalletService {
 
   /**
    * Connect to wallet and request accounts
+   * This is a client-side only method that doesn't interact with the backend
    */
-  async connect(): Promise<WalletConnection> {
+  async connect(): Promise<string> {
+    if (!this.ethereum) {
+      throw new Error('Wallet provider not initialized');
+    }
+    
     try {
-      // First try connecting via backend service
-      const response = await api.post('/api/wallet/connect');
+      // Request accounts from wallet
+      const accounts = await this.ethereum.request({ method: 'eth_requestAccounts' });
       
-      if (response.data.status === 'success') {
-        return response.data.data;
+      if (!accounts || accounts.length === 0) {
+        throw new Error('No accounts available');
       }
       
-      throw new Error('Backend connection failed, trying direct connection');
-    } catch (error) {
-      console.warn('Backend wallet connection failed, trying direct browser connection');
-      
-      if (!this.ethereum) {
-        throw new Error('Wallet provider not initialized');
+      // Return the first account address
+      return accounts[0];
+    } catch (error: any) {
+      // Handle user rejection
+      if (error.code === 4001) {
+        throw new Error('You rejected the connection request');
       }
       
-      try {
-        // Direct browser connection as fallback
-        const accounts = await this.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        if (!accounts || accounts.length === 0) {
-          throw new Error('No accounts available');
-        }
-        
-        const address = accounts[0];
-        
-        // Switch to Base if not already on it
-        await this.switchToBaseNetwork();
-        
-        return {
-          address,
-          connected: true
-        };
-      } catch (walletError: any) {
-        console.error('Error connecting to wallet:', walletError);
-        throw new Error(walletError.message || 'Failed to connect wallet');
-      }
+      console.error('Error connecting wallet:', error);
+      throw error; // Rethrow for better error handling
     }
   }
   
   /**
-   * Disconnect wallet
+   * Update wallet address on the backend
+   * @param walletAddress Wallet address to update
+   */
+  async updateWalletAddress(walletAddress: string): Promise<WalletResponse> {
+    try {
+      // Make API call to update wallet address
+      const response = await api.patch('/api/wallet/address', { walletAddress });
+      
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error updating wallet address:', error);
+      
+      // Check for specific error types
+      if (error.response) {
+        const { status, data } = error.response;
+        
+        if (status === 400 && data.message.includes('already linked')) {
+          throw new Error('This wallet address is already linked to another account');
+        }
+        
+        if (status === 400 && data.message.includes('Invalid')) {
+          throw new Error('Invalid wallet address format');
+        }
+      }
+      
+      throw error; // Rethrow for better error handling
+    }
+  }
+  
+  /**
+   * Clear wallet address in the backend
+   */
+  async clearWalletAddress(): Promise<WalletResponse> {
+    try {
+      const response = await api.delete('/api/wallet/address');
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error clearing wallet address:', error);
+      throw error; // Rethrow for better error handling
+    }
+  }
+  
+  /**
+   * Get wallet connection status from the backend
+   */
+  async getWalletStatus(): Promise<WalletConnection> {
+    try {
+      const response = await api.get('/api/wallet/address');
+      return response.data.data;
+    } catch (error: any) {
+      console.error('Error getting wallet status:', error);
+      throw error; // Rethrow for better error handling
+    }
+  }
+  
+  /**
+   * Disconnect wallet (client-side only)
    */
   async disconnect(): Promise<void> {
     try {
-      // Try backend first
-      await api.post('/api/wallet/disconnect');
-    } catch (error) {
-      console.warn('Backend wallet disconnect failed, trying direct browser disconnect');
+      // Clear wallet address in backend first
+      await this.clearWalletAddress();
       
-      // Fall back to direct disconnect if available
+      // Then disconnect from wallet provider if possible
       if (this.ethereum && this.ethereum.close) {
         await this.ethereum.close();
       } else if (this.ethereum && this.ethereum.disconnect) {
         await this.ethereum.disconnect();
       }
-    }
-  }
-  
-  /**
-   * Get wallet connection status
-   */
-  async getStatus(): Promise<WalletConnection> {
-    try {
-      const response = await api.get('/api/wallet/status');
-      return response.data.data;
-    } catch (error) {
-      // Fall back to browser check
-      const connected = this.ethereum && this.ethereum.isConnected && this.ethereum.isConnected();
-      const address = this.ethereum && this.ethereum.selectedAddress;
-      
-      return {
-        address: address || null,
-        connected: !!connected
-      };
-    }
-  }
-  
-  /**
-   * Get a user's wallet address
-   */
-  async getUserWallet(userId: string): Promise<{ walletAddress: string | null; isVerified: boolean }> {
-    const response = await api.get(`/api/wallet/${userId}`);
-    return response.data.data;
-  }
-  
-  /**
-   * Update a user's wallet address
-   */
-  async updateWallet(userId: string, walletAddress: string): Promise<WalletVerification> {
-    const response = await api.patch(`/api/wallet/${userId}`, { walletAddress });
-    return response.data.data;
-  }
-  
-  /**
-   * Sign a message to verify wallet ownership
-   */
-  async signMessage(message: string): Promise<string> {
-    try {
-      // Try backend first
-      const response = await api.post('/api/wallet/sign', { message });
-      return response.data.data.signature;
-    } catch (error) {
-      console.warn('Backend signing failed, trying direct browser signing');
-      
-      if (!this.ethereum) {
-        throw new Error('Wallet provider not initialized');
-      }
-      
-      const from = this.ethereum.selectedAddress;
-      if (!from) {
-        throw new Error('No wallet connected');
-      }
-      
-      // Use personal_sign for compatibility
-      const signature = await this.ethereum.request({
-        method: 'personal_sign',
-        params: [message, from]
-      });
-      
-      return signature;
-    }
-  }
-  
-  /**
-   * Verify wallet ownership with a signature
-   */
-  async verifyWallet(userId: string, signature: string, message: string): Promise<WalletVerification> {
-    const response = await api.post(`/api/wallet/${userId}/verify`, { signature, message });
-    return response.data.data;
-  }
-  
-  /**
-   * Get wallet balance
-   */
-  async getBalance(): Promise<string> {
-    try {
-      // Try backend first
-      const response = await api.get('/api/wallet/balance');
-      return response.data.data.balance;
-    } catch (error) {
-      console.warn('Backend balance check failed, trying direct browser balance check');
-      
-      if (!this.provider || !this.ethereum) {
-        throw new Error('Wallet provider not initialized');
-      }
-      
-      const address = this.ethereum.selectedAddress;
-      if (!address) {
-        throw new Error('No wallet connected');
-      }
-      
-      // Get balance using ethers
-      const balance = await this.provider.getBalance(address);
-      return ethers.formatEther(balance);
+    } catch (error: any) {
+      console.error('Error disconnecting wallet:', error);
+      throw error; // Rethrow for better error handling
     }
   }
   
@@ -241,42 +187,6 @@ class WalletService {
       } else {
         throw error;
       }
-    }
-  }
-  
-  /**
-   * Send a transaction
-   */
-  async sendTransaction(to: string, amount: string): Promise<string> {
-    if (!this.provider || !this.ethereum) {
-      throw new Error('Wallet provider not initialized');
-    }
-    
-    const from = this.ethereum.selectedAddress;
-    if (!from) {
-      throw new Error('No wallet connected');
-    }
-    
-    // Convert ether to wei
-    const value = ethers.parseEther(amount);
-    
-    try {
-      // Get signer
-      const signer = await this.provider.getSigner();
-      
-      // Send transaction
-      const tx = await signer.sendTransaction({
-        to,
-        value
-      });
-      
-      // Wait for transaction to be mined
-      await tx.wait();
-      
-      return tx.hash;
-    } catch (error) {
-      console.error('Transaction error:', error);
-      throw error;
     }
   }
 }

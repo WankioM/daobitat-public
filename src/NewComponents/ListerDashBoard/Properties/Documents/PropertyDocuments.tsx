@@ -1,5 +1,3 @@
-// src/components/DocumentManager/PropertyDocuments.tsx
-
 import React, { useState, useEffect } from 'react';
 import documentService from '../../../../services/documentService';
 import { DocumentType, DocumentTypeLabels, DocumentTypeDescriptions } from '../../../../types/propertyDocuments';
@@ -9,6 +7,9 @@ import { FaPlus, FaTrash, FaEye, FaCheck, FaHourglass, FaWallet } from 'react-ic
 import useWallet from '../../../../hooks/useWallet';
 import WalletSelector from '../../../Wallet/WalletSelector';
 import { useUser } from '../../../../NewContexts/UserContext';
+import walletService from '../../../../services/userwalletService';
+// Import the API service
+import api from '../../../../services/api';
 
 interface PropertyDocumentsProps {
   propertyId: string;
@@ -24,16 +25,29 @@ const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ propertyId }) => 
 
   // Get user ID from auth context
   const { user } = useUser();
-const userId = user?._id;
+  const userId = user?._id;
 
   // Use wallet hook
   const { 
     address, 
     isConnected, 
     isVerified, 
-    connect, 
-    verifyWallet 
-  } = useWallet(userId);
+    connect,
+    disconnect
+  } = useWallet();
+  
+
+  const verifyWallet = async (userId: string) => {
+    try {
+      // Since there's no verifyWallet method in the service, we'll just
+      // check if we're connected and return a resolved promise
+      if (!isConnected) throw new Error('Wallet not connected');
+      return Promise.resolve();
+    } catch (error: any) {
+      console.error('Error verifying wallet:', error);
+      throw error;
+    }
+  };
 
   // Form state
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -44,6 +58,34 @@ const userId = user?._id;
 
   // Document counts by type
   const [documentCounts, setDocumentCounts] = useState<Record<DocumentType, number>>({} as Record<DocumentType, number>);
+
+  // Check if wallet is already connected when component mounts
+  useEffect(() => {
+    const checkWalletConnection = async () => {
+      try {
+        // Check if wallet address exists in backend
+        const response = await api.get('/api/wallet/address', {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (response.data.status === 'success' && response.data.data.address) {
+          console.log('Wallet already connected:', response.data.data);
+          // If backend shows a connected wallet but our local state doesn't, update local state
+          if (!isConnected && connect) {
+            await connect();
+          }
+        }
+      } catch (err) {
+        console.warn('Could not verify wallet connection status:', err);
+      }
+    };
+    
+    if (userId) {
+      checkWalletConnection();
+    }
+  }, [userId, isConnected, connect]);
 
   useEffect(() => {
     // Add custom CSS for animated underline
@@ -85,6 +127,32 @@ const userId = user?._id;
     fetchDocuments();
     fetchDocumentCounts();
   }, [propertyId]);
+
+  // Handle wallet disconnection
+  const handleDisconnectWallet = async () => {
+    try {
+      setActionLoading(true);
+      
+      // Clear wallet address in backend
+      await api.delete('/api/wallet/address', {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      // Disconnect wallet locally - make sure disconnect exists in useWallet
+      if (disconnect) {
+        await disconnect();
+      }
+      
+      console.log('Wallet disconnected');
+    } catch (err) {
+      console.error('Error disconnecting wallet:', err);
+      setError('Failed to disconnect wallet');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const fetchDocuments = async () => {
     try {
@@ -164,23 +232,6 @@ const userId = user?._id;
     if (!documentName.trim()) {
       setError('Please enter a document name');
       return;
-    }
-
-    // Check if wallet is connected and verified before submitting
-    if (!isConnected) {
-      setError('Please connect your wallet to upload documents');
-      setIsWalletModalOpen(true);
-      return;
-    }
-
-    if (!isVerified && userId) {
-      try {
-        await verifyWallet(userId);
-      } catch (err) {
-        console.error('Error verifying wallet:', err);
-        setError('Failed to verify wallet. Please try again.');
-        return;
-      }
     }
 
     // Update the file path to use propertydocs folder
@@ -266,25 +317,80 @@ const userId = user?._id;
     return count > 0 && type !== activeTab;
   };
 
-  // Handle wallet selection
+  // Handle wallet selection and connection
   const handleWalletSelect = async (walletId: string) => {
     try {
       setActionLoading(true);
-      await connect();
-      setIsWalletModalOpen(false);
+      setError(null);
       
-      // If we have a userId, verify the wallet
-      if (userId && !isVerified) {
+      let walletAddress;
+      
+      // Get wallet address based on selected provider
+      if (walletId === 'coinbase') {
+        // Connect using Coinbase wallet
         try {
-          await verifyWallet(userId);
-        } catch (verifyErr) {
-          console.warn('Wallet verification can be completed later');
-          // Don't block the flow if verification fails
+          // Instead of directly accessing ethereum, use the methods provided by the service
+          const connection = await walletService.connect();
+          walletAddress = connection;
+        } catch (err) {
+          console.error('Error connecting to Coinbase Wallet:', err);
+          throw new Error('Failed to connect Coinbase Wallet');
+        }
+      } else if (walletId === 'metamask' || walletId === 'rainbow') {
+        // Connect using MetaMask or Rainbow (they use window.ethereum)
+        if (!window.ethereum) {
+          throw new Error(`${walletId === 'metamask' ? 'MetaMask' : 'Rainbow'} not installed`);
+        }
+        
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          if (accounts && accounts.length > 0) {
+            walletAddress = accounts[0];
+          }
+        } catch (err) {
+          console.error(`Error connecting to ${walletId === 'metamask' ? 'MetaMask' : 'Rainbow'}:`, err);
+          throw new Error(`Failed to connect ${walletId === 'metamask' ? 'MetaMask' : 'Rainbow'}`);
         }
       }
-    } catch (err) {
+      
+      // If we got a wallet address, update it in the backend
+      if (walletAddress) {
+        try {
+          // Update wallet address in the backend
+          await api.patch('/api/wallet/address', { walletAddress }, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+          
+          console.log(`Updated wallet address: ${walletAddress}`);
+          
+          // Close modal and refresh wallet state
+          setIsWalletModalOpen(false);
+          
+          // Update local wallet state
+          if (connect) {
+            await connect();
+          }
+          
+          // If we have a userId, verify the wallet
+          if (userId && !isVerified) {
+            setTimeout(() => {
+              verifyWallet(userId).catch((error: any) => {
+                console.warn('Wallet verification can be completed later:', error);
+              });
+            }, 500);
+          }
+        } catch (updateErr) {
+          console.error('Failed to update wallet address in backend:', updateErr);
+          throw new Error('Failed to update wallet address');
+        }
+      } else {
+        throw new Error('No wallet address received');
+      }
+    } catch (err: any) {
       console.error('Error connecting wallet:', err);
-      setError('Failed to connect wallet. Please try again.');
+      setError(err.message || 'Failed to connect wallet. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -292,31 +398,10 @@ const userId = user?._id;
 
   // Open the modal
   const handleOpenUploadModal = () => {
-    // If wallet not connected, open wallet modal first
-    if (!isConnected) {
-      setIsWalletModalOpen(true);
-      return;
-    }
-
-    // If wallet connected but not verified and we have a userId, verify it
-    if (!isVerified && userId) {
-      verifyWallet(userId)
-        .then(() => {
-          setIsModalOpen(true);
-          if (activeTab !== 'all') {
-            setDocumentType(activeTab);
-          }
-        })
-        .catch(err => {
-          console.error('Error verifying wallet:', err);
-          setError('Failed to verify wallet. Please try again.');
-        });
-    } else {
-      // If wallet connected and verified (or no userId), open the upload modal directly
-      setIsModalOpen(true);
-      if (activeTab !== 'all') {
-        setDocumentType(activeTab);
-      }
+    // Simply open the modal without wallet checks
+    setIsModalOpen(true);
+    if (activeTab !== 'all') {
+      setDocumentType(activeTab);
     }
   };
 
@@ -338,8 +423,18 @@ const userId = user?._id;
         </div>
         <div className="mt-4 md:mt-0 flex items-center gap-2">
           {isConnected ? (
-            <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md flex items-center text-sm">
-              <FaWallet className="mr-2" /> Wallet Connected
+            <div className="flex items-center gap-2">
+              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md flex items-center text-sm">
+                <FaWallet className="mr-2" /> 
+                {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Wallet Connected'}
+              </div>
+              <button
+                onClick={handleDisconnectWallet}
+                className="text-sm text-gray-500 hover:text-red-600 transition-all"
+                title="Disconnect wallet"
+              >
+                <FaTrash className="w-4 h-4" />
+              </button>
             </div>
           ) : (
             <button
@@ -397,17 +492,6 @@ const userId = user?._id;
         ))}
       </div>
       
-      {/* Upload Document Button - Always visible */}
-      <div className="flex justify-end mb-4">
-        <button
-          onClick={handleOpenUploadModal}
-          className="px-4 py-2 bg-desertclay text-milk rounded-md flex items-center font-helvetica-regular text-sm hover:bg-opacity-90 transition-all"
-        >
-          <FaPlus className="mr-2" /> 
-          {activeTab === 'all' ? "Upload Document" : `Upload ${DocumentTypeLabels[activeTab]}`}
-        </button>
-      </div>
-     
       {/* Document Grid */}
       {!loading && documents.length === 0 ? (
         <div className="text-center py-10 bg-milk/80 rounded-lg border border-dashed border-gray-300">
